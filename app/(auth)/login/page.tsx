@@ -27,6 +27,19 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
+    const [showSignup, setShowSignup] = useState(false);
+
+    // Signup form state
+    const [signupData, setSignupData] = useState({
+        name: "",
+        email: "",
+        username: "",
+        password: "",
+        phoneNumber: ""
+    });
+    const [signupLoading, setSignupLoading] = useState(false);
+    const [signupError, setSignupError] = useState("");
+
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -92,6 +105,122 @@ const Login = () => {
         }
     };
 
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Reset error state
+        setSignupError("");
+
+        // Basic validation
+        if (!signupData.name.trim()) {
+            setSignupError("Please enter your name");
+            return;
+        }
+
+        if (!signupData.email.trim()) {
+            setSignupError("Please enter your email");
+            return;
+        }
+
+        if (!signupData.username.trim()) {
+            setSignupError("Please enter a username");
+            return;
+        }
+
+        if (!signupData.password.trim()) {
+            setSignupError("Please enter a password");
+            return;
+        }
+
+        if (!signupData.phoneNumber.trim()) {
+            setSignupError("Please enter your phone number");
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(signupData.email)) {
+            setSignupError("Please enter a valid email address");
+            return;
+        }
+
+        // Phone number validation (basic)
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(signupData.phoneNumber.replace(/\D/g, ''))) {
+            setSignupError("Please enter a valid 10-digit phone number");
+            return;
+        }
+
+        setSignupLoading(true);
+
+        try {
+            console.log('📤 Attempting signup with:', {
+                name: signupData.name,
+                email: signupData.email,
+                username: signupData.username,
+                phoneNumber: signupData.phoneNumber
+            });
+
+            const response = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: signupData.name.trim(),
+                    email: signupData.email.trim(),
+                    username: signupData.username.trim(),
+                    password: signupData.password.trim(),
+                    phoneNumber: signupData.phoneNumber.trim()
+                }),
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+
+            console.log('📝 Signup response:', {
+                status: response.status,
+                success: data.success,
+                message: data.message
+            });
+
+            if (response.ok && data.success) {
+                console.log('✅ Signup successful');
+                alert('✅ Account created successfully! Please login with your credentials.');
+
+                // Reset signup form and switch to login
+                setSignupData({
+                    name: "",
+                    email: "",
+                    username: "",
+                    password: "",
+                    phoneNumber: ""
+                });
+                setShowSignup(false);
+
+                // Pre-fill username in login form
+                setUsername(signupData.username);
+            } else {
+                setSignupError(data.message || 'Signup failed. Please try again.');
+                console.error('❌ Signup failed:', data.message);
+            }
+
+        } catch (error: any) {
+            console.error('❌ Signup error:', error);
+            setSignupError('Network error. Please check your connection and try again.');
+        } finally {
+            setSignupLoading(false);
+        }
+    };
+
+    const updateSignupData = (field: string, value: string) => {
+        setSignupData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+        if (signupError) setSignupError(""); // Clear error when user types
+    };
+
     return (
         <div className="flex flex-col justify-center lg:min-h-dvh lg:px-10">
             {/* Main content  */}
@@ -106,83 +235,193 @@ const Login = () => {
                     >
                         <Image src={Logo} className="w-15 h-15" alt="logo" />
                         <div className="space-y-2 text-start">
-                            <Heading as="h3">Welcome back,</Heading>
-                            <Caption className="text-gray-700">Login to get Started</Caption>
+                            <Heading as="h3">{showSignup ? "Create Account" : "Welcome back,"}</Heading>
+                            <Caption className="text-gray-700">
+                                {showSignup ? "Sign up to get started" : "Login to get Started"}
+                            </Caption>
                         </div>
-                        <form className="space-y-4" onSubmit={handleLogin}>
-                            {error && (
-                                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                                    ❌ {error}
-                                </div>
-                            )}
 
-                            <TextField
-                                variant="underline"
-                                label="Username/Email"
-                                placeholder="Enter your username or email"
-                                value={username}
-                                onChange={(e) => {
-                                    setUsername(e.target.value);
-                                    if (error) setError(""); // Clear error when user types
-                                }}
-                                disabled={loading}
-                                required
-                            />
+                        {!showSignup ? (
+                            // Login Form
+                            <form className="space-y-4" onSubmit={handleLogin}>
+                                {error && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                                        ❌ {error}
+                                    </div>
+                                )}
 
-                            <TextField
-                                placeholder="Enter your password"
-                                variant="underline"
-                                label="Password"
-                                type={!toggle ? "password" : "text"}
-                                value={password}
-                                onChange={(e) => {
-                                    setPassword(e.target.value);
-                                    if (error) setError(""); // Clear error when user types
-                                }}
-                                disabled={loading}
-                                required
-                                rightSection={
-                                    <IconButton
-                                        variant="link"
-                                        size="sm"
-                                        onClick={() => setToggle(!toggle)}
-                                        disabled={loading}
-                                    >
-                                        {toggle ? <EyeSlash /> : <Eye />}
-                                    </IconButton>
-                                }
-                            />
-
-                            <div className="flex justify-between items-center gap-4">
-                                <Checkbox
-                                    label="Remember Me"
-                                    size="sm"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe((e.target as HTMLInputElement).checked)}
+                                <TextField
+                                    variant="underline"
+                                    label="Username"
+                                    placeholder="Enter your username"
+                                    value={username}
+                                    onChange={(e) => {
+                                        setUsername(e.target.value);
+                                        if (error) setError(""); // Clear error when user types
+                                    }}
                                     disabled={loading}
+                                    required
                                 />
-                                <Button size="xs" variant="link" disabled={loading}>
-                                    Forget Password?
+
+                                <TextField
+                                    placeholder="Enter your password"
+                                    variant="underline"
+                                    label="Password"
+                                    type={!toggle ? "password" : "text"}
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        if (error) setError(""); // Clear error when user types
+                                    }}
+                                    disabled={loading}
+                                    required
+                                    rightSection={
+                                        <IconButton
+                                            variant="link"
+                                            size="sm"
+                                            onClick={() => setToggle(!toggle)}
+                                            disabled={loading}
+                                        >
+                                            {toggle ? <EyeSlash /> : <Eye />}
+                                        </IconButton>
+                                    }
+                                />
+
+                                <div className="flex justify-between items-center gap-4">
+                                    <Checkbox
+                                        label="Remember Me"
+                                        size="sm"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe((e.target as HTMLInputElement).checked)}
+                                        disabled={loading}
+                                    />
+                                    <Button size="xs" variant="link" disabled={loading}>
+                                        Forget Password?
+                                    </Button>
+                                </div>
+
+                                <Button
+                                    size="lg"
+                                    fullWidth
+                                    type="submit"
+                                    disabled={loading || !username.trim() || !password.trim()}
+                                >
+                                    {loading ? "Signing in..." : "Login"}
                                 </Button>
-                            </div>
 
-                            <Button
-                                size="lg"
-                                fullWidth
-                                type="submit"
-                                disabled={loading || !username.trim() || !password.trim()}
-                            >
-                                {loading ? "Signing in..." : "Login"}
-                            </Button>
+                                <div className="text-center">
+                                    <Text size="sm" className="text-gray-600">
+                                        Don't have an account?{" "}
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            onClick={() => setShowSignup(true)}
+                                            disabled={loading}
+                                            className="p-0 h-auto"
+                                        >
+                                            Sign up here
+                                        </Button>
+                                    </Text>
+                                </div>
+                            </form>
+                        ) : (
+                            // Signup Form
+                            <form className="space-y-4" onSubmit={handleSignup}>
+                                {signupError && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                                        ❌ {signupError}
+                                    </div>
+                                )}
 
-                            <div className="flex items-center gap-3">
-                                <Image src={Whatsapp} alt="Whatsapp Icon" width={24} height={24} />
-                                <Text className="text-gray-700 flex-1" size="sm">
-                                    Send messages and notifications on whatsapp
-                                </Text>
-                                <Switch disabled={loading} />
-                            </div>
-                        </form>
+                                <TextField
+                                    variant="underline"
+                                    label="Full Name"
+                                    placeholder="Enter your full name"
+                                    value={signupData.name}
+                                    onChange={(e) => updateSignupData("name", e.target.value)}
+                                    disabled={signupLoading}
+                                    required
+                                />
+
+                                <TextField
+                                    variant="underline"
+                                    label="Email Address"
+                                    placeholder="Enter your email"
+                                    type="email"
+                                    value={signupData.email}
+                                    onChange={(e) => updateSignupData("email", e.target.value)}
+                                    disabled={signupLoading}
+                                    required
+                                />
+
+                                <TextField
+                                    variant="underline"
+                                    label="Username"
+                                    placeholder="Choose a username"
+                                    value={signupData.username}
+                                    onChange={(e) => updateSignupData("username", e.target.value)}
+                                    disabled={signupLoading}
+                                    required
+                                />
+
+                                <TextField
+                                    variant="underline"
+                                    label="Phone Number"
+                                    placeholder="Enter your phone number"
+                                    type="text"
+                                    value={signupData.phoneNumber}
+                                    onChange={(e) => updateSignupData("phoneNumber", e.target.value)}
+                                    disabled={signupLoading}
+                                    required
+                                />
+
+                                <TextField
+                                    placeholder="Create a password"
+                                    variant="underline"
+                                    label="Password"
+                                    type={!toggle ? "password" : "text"}
+                                    value={signupData.password}
+                                    onChange={(e) => updateSignupData("password", e.target.value)}
+                                    disabled={signupLoading}
+                                    required
+                                    rightSection={
+                                        <IconButton
+                                            variant="link"
+                                            size="sm"
+                                            onClick={() => setToggle(!toggle)}
+                                            disabled={signupLoading}
+                                        >
+                                            {toggle ? <EyeSlash /> : <Eye />}
+                                        </IconButton>
+                                    }
+                                />
+
+                                <Button
+                                    size="lg"
+                                    fullWidth
+                                    type="submit"
+                                    disabled={signupLoading || !signupData.name.trim() || !signupData.email.trim() ||
+                                        !signupData.username.trim() || !signupData.password.trim() || !signupData.phoneNumber.trim()}
+                                >
+                                    {signupLoading ? "Creating Account..." : "Sign Up"}
+                                </Button>
+
+                                <div className="text-center">
+                                    <Text size="sm" className="text-gray-600">
+                                        Already have an account?{" "}
+                                        <Button
+                                            variant="link"
+                                            size="sm"
+                                            onClick={() => setShowSignup(false)}
+                                            disabled={signupLoading}
+                                            className="p-0 h-auto"
+                                        >
+                                            Login here
+                                        </Button>
+                                    </Text>
+                                </div>
+                            </form>
+                        )}
                     </Card>
                 </div>
             </main>

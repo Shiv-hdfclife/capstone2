@@ -3,15 +3,51 @@ import axios from "axios";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const { name, email, username, password, phoneNumber } = await req.json();
+
+    // Basic validation
+    if (!name || !email || !username || !password || !phoneNumber) {
+      return NextResponse.json(
+        { success: false, message: "All fields are required" },
+        { status: 400 }
+      );
+    }
+
+    console.log('📤 Attempting signup with:', {
+      name,
+      email,
+      username,
+      phoneNumber: phoneNumber.substring(0, 3) + "XXXXXXX" // Log partial phone for security
+    });
 
     // Forward signup request to backend API
-    const res = await axios.post("http://10.62.201.200:8080/auth/signup", body);
+    const res = await axios.post("http://10.62.201.200:8080/auth/signup", {
+      name: name.trim(),
+      email: email.trim(),
+      username: username.trim(),
+      password: password.trim(),
+      phoneNumber: phoneNumber.trim()
+    });
 
-    return NextResponse.json(res.data);
+    console.log('✅ Signup API response received:', {
+      status: res.status,
+      success: res.data.success || true
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Account created successfully",
+      user: res.data.user || { username, email, name }
+    });
+
   } catch (error: any) {
+    console.error('❌ Signup API error:', error.response?.data || error.message);
+
     return NextResponse.json(
-      { success: false, message: error.response?.data || "Signup failed" },
+      {
+        success: false,
+        message: error.response?.data?.message || error.message || "Signup failed. Please try again."
+      },
       { status: error.response?.status || 500 }
     );
   }

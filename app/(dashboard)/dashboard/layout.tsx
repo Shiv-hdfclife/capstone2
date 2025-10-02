@@ -17,6 +17,8 @@ export default function DashboardLayout({
 }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
+    const [selectedBusinessType, setSelectedBusinessType] = useState<string>('');
+    const [selectedChannelType, setSelectedChannelType] = useState<string>('');
     const [uploadLoading, setUploadLoading] = useState(false);
     const dispatch = useAppDispatch();
     const leftSectionOpen = useAppSelector((state) => state.sidebar.leftSection);
@@ -49,12 +51,24 @@ export default function DashboardLayout({
             return;
         }
 
+        if (!selectedBusinessType) {
+            alert('❌ Please select a business type before uploading');
+            return;
+        }
+
+        if (!selectedChannelType) {
+            alert('❌ Please select a channel type before uploading');
+            return;
+        }
+
         setUploadLoading(true);
         try {
             console.log('📤 Uploading raw loader file to API:', {
                 fileName: file.name,
                 fileSize: file.size,
-                documentType: selectedDocumentType
+                documentType: selectedDocumentType,
+                businessType: selectedBusinessType,
+                channelType: selectedChannelType
             });
 
             // Using hardcoded values for now - you can make these dynamic later
@@ -64,6 +78,11 @@ export default function DashboardLayout({
             const response = await uploadRawLoader(file, selectedDocumentType, partnerId, configId);
             console.log('✅ Raw Loader Upload API response:', response);
             alert(`✅ File "${file.name}" uploaded successfully to raw loader!`);
+
+            // Reset form on success
+            setSelectedDocumentType('');
+            setSelectedBusinessType('');
+            setSelectedChannelType('');
             setDrawerOpen(false); // Close drawer on success
         } catch (error: any) {
             console.error('❌ Raw Loader Upload API error:', error);
@@ -71,7 +90,7 @@ export default function DashboardLayout({
         } finally {
             setUploadLoading(false);
         }
-    }, [selectedDocumentType]);
+    }, [selectedDocumentType, selectedBusinessType, selectedChannelType]);
 
     const handleFileChange = useCallback((details: any) => {
         console.log('🔄 Raw Loader File changed - details:', details);
@@ -226,19 +245,48 @@ export default function DashboardLayout({
                             ]}
                         />
 
+                        <Select
+                            label="Please select business type"
+                            value={selectedBusinessType ? [selectedBusinessType] : []}
+                            onValueChange={(details: any) => {
+                                console.log('📋 Business type selected details:', details);
+                                const value = details.value?.[0] || details.value || '';
+                                console.log('📋 Business type selected value:', value);
+                                setSelectedBusinessType(value);
+                            }}
+                            items={[
+                                "New Business",
+                            ]}
+                        />
+
+                        <Select
+                            label="Please select channel type"
+                            value={selectedChannelType ? [selectedChannelType] : []}
+                            onValueChange={(details: any) => {
+                                console.log('📋 Channel type selected details:', details);
+                                const value = details.value?.[0] || details.value || '';
+                                console.log('📋 Channel type selected value:', value);
+                                setSelectedChannelType(value);
+                            }}
+                            items={[
+                                "MFI",
+                                "SHG",
+                            ]}
+                        />
+
                         <Upload
                             accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             allowDrop
                             buttonLabel={uploadLoading ? "Uploading..." : "Choose Excel File"}
-                            label={`Upload Raw Loader Data${selectedDocumentType ? ` - ${selectedDocumentType}` : ''}`}
+                            label={`Upload Raw Loader Data${selectedDocumentType ? ` - ${selectedDocumentType}` : ''}${selectedBusinessType ? ` - ${selectedBusinessType}` : ''}${selectedChannelType ? ` - ${selectedChannelType}` : ''}`}
                             minFileSize={1024}
                             maxFileSize={10 * 1024 * 1024} // 10MB
                             size="lg"
                             variant="extended"
-                            disabled={uploadLoading || !selectedDocumentType}
+                            disabled={uploadLoading || !selectedDocumentType || !selectedBusinessType || !selectedChannelType}
                             helperText={{
-                                message: !selectedDocumentType
-                                    ? "Please select a document type first"
+                                message: (!selectedDocumentType || !selectedBusinessType || !selectedChannelType)
+                                    ? "Please select all required fields first"
                                     : "Only Excel files (.xls, .xlsx) are allowed (1KB - 10MB)"
                             }}
                             onFileAccept={handleFileAccept}

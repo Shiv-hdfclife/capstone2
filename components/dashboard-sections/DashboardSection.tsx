@@ -264,22 +264,50 @@ export default function DashboardSection() {
 
     const columns = [
         columnHelper.accessor("raisedOn", {
-            header: "Raised On",
+            header: "Date",
             cell: (info) => info.getValue(),
             enableSorting: true,
         }),
         columnHelper.accessor("frTitle", {
-            header: "FR Title",
+            header: "Loader Id",
             cell: (info) => info.getValue(),
             enableSorting: true,
         }),
         columnHelper.accessor("frSubType", {
-            header: "FR Sub Type",
+            header: "Template Name",
             cell: (info) => info.getValue(),
             enableSorting: true,
         }),
         columnHelper.accessor("frDescription", {
-            header: "FR Description",
+            header: "Loader Type",
+            cell: (info) => (
+                <Button
+                    variant="link-underline"
+                    color="blue"
+                    className="font-normal"
+                    endIcon={<Article />}
+                    size="sm"
+                >
+                    {info.getValue()}
+                </Button>
+            ),
+            enableSorting: true,
+        }), columnHelper.accessor("frDescription", {
+            header: "Uploaded By",
+            cell: (info) => (
+                <Button
+                    variant="link-underline"
+                    color="blue"
+                    className="font-normal"
+                    endIcon={<Article />}
+                    size="sm"
+                >
+                    {info.getValue()}
+                </Button>
+            ),
+            enableSorting: true,
+        }), columnHelper.accessor("frDescription", {
+            header: "Action",
             cell: (info) => (
                 <Button
                     variant="link-underline"
