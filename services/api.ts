@@ -21,11 +21,32 @@ export type PaginatedResponse<T> = {
   pageSize: number;
 };
 
-
+// Fetch all partners (paginated)
 export const fetchPartners = async (): Promise<PaginatedResponse<Partner>> => {
   try {
     const res = await axiosInstance.get(`/partners`);
-    return res.data;
+    const raw = res.data;
+
+    const normalized = (raw.partners || []).map((p: any) => ({
+      id: p.id,
+      PartnerName: p.name,
+      email: p.email,
+      Type: p.partnerType,
+      phone: p.contactNumber,
+      PAN: p.panNumber,
+      GST: p.gstinNumber,
+      ContactAddress: p.address,
+      DateofAgreement: p.dateOfAgreement,
+      Location: p.location, // only if present
+      actions: ["View", "Edit"],
+    }));
+
+    return {
+      data: normalized,
+      total: normalized.length,
+      page: 1,
+      pageSize: normalized.length,
+    };
   } catch (error: any) {
     throw {
       status: error.response?.status || 500,
@@ -52,7 +73,18 @@ export const fetchPartnerById = async (id: number): Promise<Partner> => {
 // Create a new partner
 export const createPartner = async (data: Partial<Partner>): Promise<Partner> => {
   try {
-    const res = await axiosInstance.post("/partners", data);
+    const payload = {
+      name: data.PartnerName,
+      email: data.email,
+      partnerType: data.Type,
+      contactNumber: data.phone,
+      address: data.ContactAddress,
+      dateOfAgreement: data.DateofAgreement,
+      gstinNumber: data.GST,
+      panNumber: data.PAN,
+    };
+
+    const res = await axiosInstance.post("/partner", payload);
     return res.data;
   } catch (error: any) {
     throw {
@@ -61,6 +93,8 @@ export const createPartner = async (data: Partial<Partner>): Promise<Partner> =>
     };
   }
 };
+
+
 
 // Update an existing partner
 export const updatePartner = async (id: number, data: Partial<Partner>): Promise<Partner> => {
@@ -74,3 +108,4 @@ export const updatePartner = async (id: number, data: Partial<Partner>): Promise
     };
   }
 };
+

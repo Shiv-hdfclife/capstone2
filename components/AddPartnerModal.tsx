@@ -49,15 +49,27 @@ export default function AddPartnerModal({
   };
 
   const handleSubmit = async () => {
-    try {
-      const response = await createPartner(formData);
-      console.log("Created Partner:", response);
-      onSuccess?.(response);
-      onClose();
-    } catch (error) {
-      console.error("Add failed:", error);
-    }
-  };
+  try {
+    const payload = {
+      name: formData.PartnerName,
+      email: formData.email,
+      partnerType: formData.Type,
+      contactNumber: formData.phone,
+      panNumber: formData.PAN,
+      gstinNumber: formData.GST,
+      address: formData.ContactAddress,
+      dateOfAgreement: toISODateString(formData.DateofAgreement),
+    };
+
+    const response = await createPartner(payload);
+    console.log("Created Partner:", response);
+    onSuccess?.(response);
+    onClose();
+  } catch (error) {
+    console.error("Add failed:", error);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
