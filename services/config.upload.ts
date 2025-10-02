@@ -17,6 +17,7 @@ export const partnerData = async () => {
 // New function to fetch partners list from BFF
 export const fetchPartners = async () => {
     try {
+        console.log("Fetching partners from BFF...");
         const res = await fetch('/api/partner/list', {
             method: 'GET',
             headers: {

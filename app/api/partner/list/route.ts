@@ -5,27 +5,23 @@ import { cookies } from "next/headers";
 export async function GET(req: Request) {
     try {
         // Get tokens from cookies
-        const cookieStore = await cookies();
-        const accessToken = cookieStore.get("accessToken")?.value;
-        const refreshToken = cookieStore.get("refreshToken")?.value;
+        // const cookieStore = await cookies();
+        // const accessToken = cookieStore.get("accessToken")?.value;
+        // const refreshToken = cookieStore.get("refreshToken")?.value;
 
-        if (!accessToken) {
-            return NextResponse.json({
-                success: false,
-                message: "Authentication required",
-                partners: []
-            }, { status: 401 });
-        }
+        // if (!accessToken) {
+        //     return NextResponse.json({
+        //         success: false,
+        //         message: "Authentication required",
+        //         partners: []
+        //     }, { status: 401 });
+        // }
 
         // Use the correct backend URL to avoid CORS issues
-        const backendUrl = process.env.BACKEND_API_URL || 'http://192.168.254.77:8088';
-        const response = await axios.get(`${backendUrl}/partners`, {
-            headers: {
-                "Access-token": accessToken,
-                "Refresh-token": refreshToken,
-            },
-        });
-
+        console.log("Entering bff");
+        const backendUrl = process.env.BACKEND_API_URL;
+        const response = await axios.get(`${backendUrl}/partners`);
+        console.log("Backend response:", response);
         // Extract only the required fields (id and name) for frontend
         const simplifiedPartners = response.data.partners.map((partner: any) => ({
             id: partner.id,
@@ -50,12 +46,14 @@ export async function GET(req: Request) {
             }, { status: 401 });
         }
 
+
         return NextResponse.json({
             success: false,
             message: error.response?.data?.message || "Failed to fetch partners",
             partners: []
         }, {
-            status: error.response?.status || 500
+            status: error.response?.status
+
         });
     }
 }

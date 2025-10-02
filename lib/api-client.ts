@@ -7,8 +7,8 @@ const axiosInstance = axios.create({
   // baseURL: "/api", // Now talks to BFF, not raw backend
   // baseURL: "http://10.141.198.31:8081", // Now talks to BFF, not raw backend
   // baseURL: "http://10.141.198.200:8083", // Now talks to BFF, not raw backend
-  baseURL: "http://192.168.254.77:8089", // Now talks to BFF, not raw backend
-  // baseURL: "http://192.168.254.74:8083", // Now talks to BFF, not raw backend
+  // baseURL: "http://192.168.254.77:8089", // Now talks to BFF, not raw backend
+  baseURL: "http://192.168.254.74:8089", // Now talks to BFF, not raw backend
   headers: {
     "Content-Type": "application/json",
   },

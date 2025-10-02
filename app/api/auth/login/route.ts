@@ -4,6 +4,7 @@ import axios from "axios";
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
+    console.log('Login attempt for user:', username);
 
     // Call backend API
     const res = await axios.post("http://192.168.254.77:8089/login", {
@@ -14,9 +15,11 @@ export async function POST(req: Request) {
 
     const data = res.data;
 
+    // console.log('Headers data', res.headers);
+
     // Extract tokens from response headers
-    const accessToken = res.headers['Access-token'];
-    const refreshToken = res.headers['Refresh-token'];
+    const accessToken = res.headers['access-token'];
+    const refreshToken = res.headers['refresh-token'];
 
     console.log('Login successful, tokens received:', {
       accessToken: accessToken ? 'Present' : 'Missing',
