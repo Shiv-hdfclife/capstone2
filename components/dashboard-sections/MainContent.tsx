@@ -13,11 +13,11 @@ export default function MainContent() {
 
     const renderSection = () => {
         switch (selectedSection) {
-            case 'dashboard':
+            case 'loaders':
                 return <DashboardSection />;
             case 'partner':
                 return <PartnerSection />;
-            case 'loaders':
+            case 'dashboard':
                 return <LoadersSection />;
             case 'services':
                 return <ServicesSection />;

@@ -64,14 +64,14 @@ export default function DashboardPage() {
                             onClick={() => handleSectionClick('loaders')}
                         >
                             <Copy />
-                            {leftSectionOpen && <span>Loaders</span>}
+                            {leftSectionOpen && <span>Loader Setup</span>}
                         </div>
                         <div
                             className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
                             onClick={() => handleSectionClick('services')}
                         >
                             <Layout />
-                            {leftSectionOpen && <span>Services</span>}
+                            {leftSectionOpen && <span>Raw Loaders</span>}
                         </div>
                         <div
                             className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
@@ -81,7 +81,6 @@ export default function DashboardPage() {
                             {leftSectionOpen && <span>Settings</span>}
                         </div>
                     </div>
-
                 </aside>
                 {/* Left Sidebar Mobile */}
                 {/* {!isDesktop && ( */}
@@ -112,7 +111,7 @@ export default function DashboardPage() {
                                     onClick={() => handleSectionClick('loaders')}
                                 >
                                     <Copy />
-                                    <span>Loaders</span>
+                                    <span>Loaders Setup</span>
                                 </div>
                                 <div
                                     className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
@@ -140,7 +139,7 @@ export default function DashboardPage() {
                 <main
                     style={
                         {
-                            "--left-sidebar-width": leftSectionOpen ? "240px" : "76px",
+                            "--left-sidebar-width": leftSectionOpen ? "200px" : "76px",
                         } as React.CSSProperties
                     }
                     className={clsx(
