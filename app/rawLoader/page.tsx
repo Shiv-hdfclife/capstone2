@@ -15,7 +15,7 @@ import {
   colors,
 } from "@hdfclife-insurance/one-x-ui";
 import { ArrowDown, ArrowUp, ArrowsDownUp } from "@phosphor-icons/react";
-import rawLoaderApi, { RawLoader } from "@/services/rawLoaderApi";
+import { fetchRawLoaders, downloadLoaderFile, type RawLoader } from "@/loaderServices/rawLoaderApi";
 import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
 import {
   Column,
@@ -31,6 +31,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 
 declare module "@tanstack/react-table" {
   interface FilterFns {
@@ -43,26 +44,11 @@ declare module "@tanstack/react-table" {
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   const itemRank = rankItem(row.getValue(columnId), value);
-  addMeta({
-    itemRank,
-  });
-
+  addMeta({ itemRank });
   return itemRank.passed;
 };
 
-type User = {
-  Date: string;
-  LoaderID: string;
-  LoaderName: string;
-  LoaderType: string;
-  Partner: string;
-  Pending: number;
-  TotalMembers: number;
-  //dob: string;
-  actions?: string;
-};
-
-const getCommonPinningStyles = (column: Column<User>): CSSProperties => {
+const getCommonPinningStyles = (column: Column<RawLoader>): CSSProperties => {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
     isPinned === "left" && column.getIsLastColumn("left");
@@ -75,7 +61,7 @@ const getCommonPinningStyles = (column: Column<User>): CSSProperties => {
     position: isPinned ? "sticky" : "relative",
     width: column.getSize(),
     boxShadow: isLastLeftPinnedColumn
-      ? `-4px 0 4px -4px ${colors.neutral.grey[200]}  inset`
+      ? `-4px 0 4px -4px ${colors.neutral.grey[200]} inset`
       : isFirstRightPinnedColumn
       ? `-4px 0px 4px 0px ${colors.neutral.grey[200]}`
       : undefined,
@@ -84,20 +70,64 @@ const getCommonPinningStyles = (column: Column<User>): CSSProperties => {
   };
 };
 
-export default function DashboardTable() {
+export default function RawLoaderPage() {
+  const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
-
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
-  const columnHelper = createColumnHelper<User>();
+  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [data, setData] = React.useState<RawLoader[]>([]);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
 
+  // Load data effect
+  React.useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const response = await fetchRawLoaders(
+          pagination.pageIndex + 1,
+          pagination.pageSize,
+          globalFilter
+        );
+        setData(response.data);
+        setTotalCount(response.total);
+      } catch (error) {
+        console.error("Failed to fetch raw loaders:", error);
+        setData([]);
+        setTotalCount(0);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [pagination.pageIndex, pagination.pageSize, globalFilter]);
+
+  const handleLoaderClick = (loaderId: string, loaderName: string) => {
+    console.log(`Navigating to loader: ${loaderName} (ID: ${loaderId})`);
+    router.push(`/LoaderContent/${loaderId}`);
+  };
+
+  const handleDownload = async (loaderId: string, fileName: string) => {
+    try {
+      setDownloadingId(loaderId);
+      await downloadLoaderFile(loaderId, fileName);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const columnHelper = createColumnHelper<RawLoader>();
   const columns = [
     {
       id: "select",
-      header: ({ table }: { table: ReactTable<User> }) => (
+      header: ({ table }: { table: ReactTable<RawLoader> }) => (
         <Checkbox
           checked={
             table.getIsAllRowsSelected()
@@ -128,7 +158,17 @@ export default function DashboardTable() {
     }),
     columnHelper.accessor("LoaderName", {
       header: "Loader Name",
-      cell: (info) => info.getValue(),
+      cell: (info) => (
+        <button
+          onClick={() => handleLoaderClick(
+            info.row.original.LoaderID,
+            info.getValue()
+          )}
+          className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium transition-colors duration-200"
+        >
+          {info.getValue()}
+        </button>
+      ),
       enableSorting: true,
       filterFn: "fuzzy",
     }),
@@ -157,141 +197,131 @@ export default function DashboardTable() {
       header: "Actions",
       enableSorting: false,
       cell: (info) => (
-        <Flex gap={2}>
-          <Button size="sm" variant="link" color="blue">
-            Download
-          </Button>
-        </Flex>
+        <Button
+          size="sm"
+          variant="link"
+          color="blue"
+          disabled={downloadingId === info.row.original.LoaderID}
+          onClick={() => handleDownload(
+            info.row.original.LoaderID,
+            info.row.original.LoaderName
+          )}
+        >
+          {downloadingId === info.row.original.LoaderID ? "Downloading..." : "Download"}
+        </Button>
       ),
     }),
   ];
 
-  const [tableData, setTableData] = React.useState<RawLoader[]>([]);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [globalFilter, setGlobalFilter] = React.useState("");
-
-  React.useEffect(() => {
-    async function fetchLoaders() {
-      const response = await rawLoaderApi.get(
-        `/api/raw-loaders?page=${pagination.pageIndex + 1}&pageSize=${
-          pagination.pageSize
-        }&search=${globalFilter}`
-      );
-      setTableData(response.data);
-      setTotalCount(response.total);
-    }
-    fetchLoaders();
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter]);
-
   const table = useReactTable({
-    data: tableData,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
-
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-
     manualPagination: true,
     pageCount: Math.ceil(totalCount / pagination.pageSize),
     onPaginationChange: setPagination,
-
-    filterFns: {
-      fuzzy: fuzzyFilter,
-    },
+    filterFns: { fuzzy: fuzzyFilter },
     globalFilterFn: fuzzyFilter,
+    onGlobalFilterChange: setGlobalFilter,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       pagination,
-      columnPinning: {
-        right: ["action"],
-      },
+      columnPinning: { right: ["action"] },
       sorting,
       rowSelection,
+      globalFilter,
     },
   });
 
   return (
-    // custom properties for the layout
-    <div className="min-h-dvh flex flex-col bg-gray-100 [--gutter:24px] [--header-height:68px]">
-        <div>
-          <form className="space-y-1">
-            <div className="grid lg:grid-cols-4 gap-4 items-end">
-              <Select label="View by" items={["All Partners"]} name="partner" />
+    <div className="min-h-dvh flex flex-col bg-gray-100 p-6">
+      <div>
+        <form className="space-y-4">
+          <div className="grid lg:grid-cols-4 gap-4 items-end">
+            <Select label="View by" items={["All Partners"]} name="partner" />
+            <Select items={["All Loader Types"]} name="policies" />
+            <Button variant="tertiary" type="reset">
+              Reset
+            </Button>
+          </div>
+          <div className="flex space-x-4">
+            <Search
+              placeholder="Search by Partner, Loader name, Loader ID, Loader type..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+            />
+            <Button type="button">Search</Button>
+          </div>
+        </form>
 
-              <Select items={["All Loader Types"]} name="policies" />
-              <Button variant="tertiary" type="reset">
-                Reset
-              </Button>
-            </div>
-            <div className="flex space-x-4">
-              <Search placeholder="Search by Partner, Loader name, Loader ID, Loader type or Uploaded by " />
-              <Button>Search</Button>
-            </div>
-          </form>
-          <div className="mt-7 space-y-3">
-            <div className="flex justify-between items-center text-[#30619c]">
+        <div className="mt-7 space-y-3">
+          <div className="flex justify-between items-center text-[#30619c]">
             <Text fontWeight="semibold" size="xl" className="text-primary-blue">
-              Loaders
+              Raw Loaders
             </Text>
-            </div>
-            <Tabs size="sm" defaultValue="nb" variant="underline">
-              <TabsContent value="nb">
-                <Table.ScrollContainer type="always">
-                  <Table withTableBorder>
-                    <Table.Head>
-                      {table.getHeaderGroups().map((headerGroup, i) => (
-                        <Table.Row key={i}>
-                          {headerGroup.headers.map((header, i) => (
-                            <Table.Th
-                              key={i}
-                              className="!py-4 bg-indigo-50"
-                              style={{
-                                ...getCommonPinningStyles(header.column),
-                              }}
-                            >
-                              {header.isPlaceholder ? null : (
-                                <Flex gap={1} align="center">
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                  {header.column.getCanSort() && (
-                                    <IconButton
-                                      variant="link"
-                                      color="gray"
-                                      size="xs"
-                                      onClick={header.column.getToggleSortingHandler()}
-                                    >
-                                      {header.column.getIsSorted() === "asc" ? (
-                                        <ArrowUp />
-                                      ) : header.column.getIsSorted() ===
-                                        "desc" ? (
-                                        <ArrowDown />
-                                      ) : (
-                                        <ArrowsDownUp />
-                                      )}
-                                    </IconButton>
-                                  )}
-                                </Flex>
-                              )}
-                            </Table.Th>
-                          ))}
-                        </Table.Row>
-                      ))}
-                    </Table.Head>
-                    <Table.Body>
-                      {table.getRowModel().rows.map((row, i) => (
+          </div>
+
+          <Tabs size="sm" defaultValue="all" variant="underline">
+            <TabsContent value="all">
+              <Table.ScrollContainer type="always">
+                <Table withTableBorder>
+                  <Table.Head>
+                    {table.getHeaderGroups().map((headerGroup, i) => (
+                      <Table.Row key={i}>
+                        {headerGroup.headers.map((header, i) => (
+                          <Table.Th
+                            key={i}
+                            className="!py-4 bg-indigo-50"
+                            style={getCommonPinningStyles(header.column)}
+                          >
+                            {header.isPlaceholder ? null : (
+                              <Flex gap={1} align="center">
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                                {header.column.getCanSort() && (
+                                  <IconButton
+                                    variant="link"
+                                    color="gray"
+                                    size="xs"
+                                    onClick={header.column.getToggleSortingHandler()}
+                                  >
+                                    {header.column.getIsSorted() === "asc" ? (
+                                      <ArrowUp />
+                                    ) : header.column.getIsSorted() === "desc" ? (
+                                      <ArrowDown />
+                                    ) : (
+                                      <ArrowsDownUp />
+                                    )}
+                                  </IconButton>
+                                )}
+                              </Flex>
+                            )}
+                          </Table.Th>
+                        ))}
+                      </Table.Row>
+                    ))}
+                  </Table.Head>
+                  <Table.Body>
+                    {loading ? (
+                      <Table.Row>
+                        <td colSpan={columns.length} className="text-center py-8">
+                          Loading raw loaders...
+                        </td>
+                      </Table.Row>
+                    ) : table.getRowModel().rows.length > 0 ? (
+                      table.getRowModel().rows.map((row, i) => (
                         <Table.Row key={i}>
                           {row.getVisibleCells().map((cell, cellIndex) => (
                             <Table.Cell
                               key={cellIndex}
                               className="!py-4"
-                              style={{
-                                ...getCommonPinningStyles(cell.column),
-                              }}
+                              style={getCommonPinningStyles(cell.column)}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -300,25 +330,32 @@ export default function DashboardTable() {
                             </Table.Cell>
                           ))}
                         </Table.Row>
-                      ))}
-                    </Table.Body>
-                  </Table>
-                </Table.ScrollContainer>
+                      ))
+                    ) : (
+                      <Table.Row>
+                        <td colSpan={columns.length} className="text-center py-8">
+                          No raw loaders found
+                        </td>
+                      </Table.Row>
+                    )}
+                  </Table.Body>
+                </Table>
+              </Table.ScrollContainer>
 
-                <Flex justify="flex-end" className="mt-3">
-                  <Pagination
-                    count={totalCount}
-                    onPrevious={() => table.previousPage()}
-                    onNext={() => table.nextPage()}
-                    pageSize={pagination.pageSize}
-                    onPageChange={(details: { page: number }) =>
-                      table.setPageIndex(details.page - 1)
-                    }
-                  />
-                </Flex>
-              </TabsContent>
-            </Tabs>
-          </div>
+              <Flex justify="flex-end" className="mt-3">
+                <Pagination
+                  count={totalCount}
+                  onPrevious={() => table.previousPage()}
+                  onNext={() => table.nextPage()}
+                  pageSize={pagination.pageSize}
+                  onPageChange={(details: { page: number }) =>
+                    table.setPageIndex(details.page - 1)
+                  }
+                />
+              </Flex>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
