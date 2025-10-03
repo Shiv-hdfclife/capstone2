@@ -8,6 +8,7 @@ import { Drawer, DrawerContent, Select, Upload } from "@hdfclife-insurance/one-x
 import { UploadSimple, FileArrowDown, Bell } from "@phosphor-icons/react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { setLeftSection } from "../../../store/slices/sidebarSlice";
+import { logout } from "../../../store/slices/userSlice";
 import { uploadRawLoader } from "../../../services/config.upload";
 
 export default function DashboardLayout({
@@ -21,9 +22,8 @@ export default function DashboardLayout({
     const [selectedChannelType, setSelectedChannelType] = useState<string>('');
     const [uploadLoading, setUploadLoading] = useState(false);
     const dispatch = useAppDispatch();
-    const leftSectionOpen = useAppSelector((state) => state.sidebar.leftSection);
-
-    const handlePressedChange = useCallback((pressed: boolean) => {
+    const { leftSection } = useAppSelector((state) => state.sidebar);
+    const { isAuthenticated, name, role, loading } = useAppSelector((state) => state.user); const handlePressedChange = useCallback((pressed: boolean) => {
         dispatch(setLeftSection(pressed));
     }, [dispatch]);
 
@@ -167,7 +167,7 @@ export default function DashboardLayout({
                 className="border-0 border-b border-solid border-indigo-200"
             >
                 <Header.Hamburger
-                    pressed={leftSectionOpen}
+                    pressed={leftSection}
                     onPressedChange={handlePressedChange}
                 />
                 <div className="flex items-center h-full max-h-[50px]">
@@ -180,19 +180,39 @@ export default function DashboardLayout({
                     />
                 </div>
                 <div className="flex items-center justify-end gap-3 w-full">
-                    <div className="text-right hidden lg:block">
-                        <Text size="sm" fontWeight="bold">
-                            Sujoy Guru
-                        </Text>
-                        <Text size="sm">Key Account Manager</Text>
-                        <Caption className="italic">
-                            Last login : 03/09/2024 12:21 pm
-                        </Caption>
-                    </div>
-                    <Avatar
-                        variant="outline"
-                        src="https://helixassets.apps-hdfclife.com/images/Childcare_2.png"
-                    />
+                    {/* {isAuthenticated ? ( */}
+                    <>
+                        <div className="text-right hidden lg:block">
+                            <Text size="sm" fontWeight="bold">
+                                {name || 'User'}
+                            </Text>
+                            <Text size="sm">{role || 'Guest'}</Text>
+                            <Caption className="italic">
+                                Last login : {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+                            </Caption>
+                        </div>
+                        <Avatar
+                            variant="outline"
+                            src="https://helixassets.apps-hdfclife.com/images/Childcare_2.png"
+                        />
+                        <button
+                            onClick={() => {
+                                dispatch(logout());
+                                window.location.href = '/login';
+                            }}
+                            className="text-sm text-blue-600 hover:text-blue-800 transition-colors ml-2"
+                        >
+                            Logout
+                        </button>
+                    </>
+                    {/* ) : (
+                        <div className="text-right hidden lg:block">
+                            <Text size="sm" fontWeight="bold">
+                                Guest
+                            </Text>
+                            <Text size="sm">Not logged in</Text>
+                        </div>
+                    )} */}
                 </div>
             </Header>
 

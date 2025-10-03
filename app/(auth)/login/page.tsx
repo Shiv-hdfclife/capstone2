@@ -16,6 +16,8 @@ import {
 import { Eye, EyeSlash, WhatsappLogoIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAppDispatch } from "../../../store/hooks";
+import { loginStart, loginSuccess, loginFailure } from "../../../store/slices/userSlice";
 import Whatsapp from '../../assets/whatsapp-logo.svg'
 import Logo from '../../assets/download.svg'
 import Image from "next/image";
@@ -41,21 +43,27 @@ const Login = () => {
     const [signupError, setSignupError] = useState("");
 
     const router = useRouter();
+    const dispatch = useAppDispatch();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Reset error state
         setError("");
+        dispatch(loginStart());
 
         // Basic validation
         if (!username.trim()) {
-            setError("Please enter your username/email");
+            const errorMsg = "Please enter your username/email";
+            setError(errorMsg);
+            dispatch(loginFailure(errorMsg));
             return;
         }
 
         if (!password.trim()) {
-            setError("Please enter your password");
+            const errorMsg = "Please enter your password";
+            setError(errorMsg);
+            dispatch(loginFailure(errorMsg));
             return;
         }
 
@@ -84,22 +92,41 @@ const Login = () => {
             console.log('📝 Login response:', {
                 status: response.status,
                 success: data.success,
-                message: data.message
+                message: data.message,
+                userData: data.user
             });
 
             if (response.ok && data.success) {
-                console.log('✅ Login successful, redirecting to dashboard...');
+                console.log('✅ Login successful, storing user data and redirecting...');
+
+                // Extract user data from response
+                const userData = data.user || {};
+                const userPayload = {
+                    name: userData.name || username, // Fallback to username if name not provided
+                    role: userData.role || "User", // Default role if not provided
+                    time: userData.time || new Date().toLocaleString() // Current time if not provided
+                };
+
+                console.log('👤 Storing user data in Redux:', userPayload);
+
+                // Dispatch login success with user data
+                dispatch(loginSuccess(userPayload));
+
                 // Successful login - redirect to dashboard
                 router.push('/dashboard');
             } else {
                 // Handle login error
-                setError(data.message || 'Login failed. Please check your credentials.');
+                const errorMsg = data.message || 'Login failed. Please check your credentials.';
+                setError(errorMsg);
+                dispatch(loginFailure(errorMsg));
                 console.error('❌ Login failed:', data.message);
             }
 
         } catch (error: any) {
             console.error('❌ Login error:', error);
-            setError('Network error. Please check your connection and try again.');
+            const errorMsg = 'Network error. Please check your connection and try again.';
+            setError(errorMsg);
+            dispatch(loginFailure(errorMsg));
         } finally {
             setLoading(false);
         }

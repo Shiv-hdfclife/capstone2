@@ -17,16 +17,16 @@ export async function POST(req: Request) {
       name,
       email,
       username,
-      phoneNumber: phoneNumber.substring(0, 3) + "XXXXXXX" // Log partial phone for security
+      phone: phoneNumber.substring(0, 3) + "XXXXXXX" // Log partial phone for security
     });
 
     // Forward signup request to backend API
-    const res = await axios.post("http://10.62.201.200:8080/auth/signup", {
+    const res = await axios.post("http://192.168.254.77:8089/register", {
       name: name.trim(),
       email: email.trim(),
       username: username.trim(),
       password: password.trim(),
-      phoneNumber: phoneNumber.trim()
+      phone: phoneNumber.trim()
     });
 
     console.log('✅ Signup API response received:', {
