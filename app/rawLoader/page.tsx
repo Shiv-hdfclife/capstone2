@@ -112,9 +112,16 @@ export default function RawLoaderPage() {
   }, [pagination.pageIndex, pagination.pageSize, globalFilter]);
 
   const handleLoaderClick = (loaderId: string, loaderName: string) => {
-    console.log(`Navigating to loader: ${loaderName} (ID: ${loaderId})`);
+  console.log(`Navigating to loader: ${loaderName} (ID: ${loaderId})`);
+  console.log("Router object:", router);
+  
+  try {
     router.push(`/LoaderContent/${loaderId}`);
-  };
+    console.log("Navigation attempted");
+  } catch (error) {
+    console.error("Navigation error:", error);
+  }
+};
 
   const handleDownload = async (loaderId: string, fileName: string) => {
     try {
@@ -162,20 +169,33 @@ export default function RawLoaderPage() {
       enableSorting: true,
     }),
     columnHelper.accessor("LoaderName", {
-      header: "Loader Name",
-      cell: (info) => (
-        <button
-          onClick={() =>
-            handleLoaderClick(info.row.original.LoaderID, info.getValue())
-          }
-          className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium transition-colors duration-200"
-        >
-          {info.getValue()}
-        </button>
-      ),
-      enableSorting: true,
-      filterFn: "fuzzy",
-    }),
+  header: "Loader Name",
+  cell: (info) => (
+    <div className="cursor-pointer">
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Button clicked!", info.row.original.LoaderID, info.getValue());
+          handleLoaderClick(info.row.original.LoaderID, info.getValue());
+        }}
+        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium transition-colors duration-200 bg-transparent border-none p-0 text-left w-full"
+        style={{ 
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          textAlign: 'left',
+          color: '#2563eb'
+        }}
+      >
+        {info.getValue()}
+      </button>
+    </div>
+  ),
+  enableSorting: true,
+  filterFn: "fuzzy",
+}),
     columnHelper.accessor("LoaderType", {
       header: "Loader Type",
       cell: (info) => info.getValue(),
