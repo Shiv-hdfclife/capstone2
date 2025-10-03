@@ -36,7 +36,7 @@ export default function AddPartnerModal({
   const [formData, setFormData] = React.useState({
     PartnerName: "",
     email: "",
-    Type: "",
+    Type: "" as "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NON_PROFIT" | "",
     phone: "",
     PAN: "",
     GST: "",
@@ -49,27 +49,20 @@ export default function AddPartnerModal({
   };
 
   const handleSubmit = async () => {
-  try {
-    const payload = {
-      name: formData.PartnerName,
-      email: formData.email,
-      partnerType: formData.Type,
-      contactNumber: formData.phone,
-      panNumber: formData.PAN,
-      gstinNumber: formData.GST,
-      address: formData.ContactAddress,
-      dateOfAgreement: toISODateString(formData.DateofAgreement),
-    };
-
-    const response = await createPartner(payload);
-    console.log("Created Partner:", response);
-    onSuccess?.(response);
-    onClose();
-  } catch (error) {
-    console.error("Add failed:", error);
-  }
-};
-
+    try {
+      // Convert empty string Type to undefined for API compatibility
+      const submissionData = {
+        ...formData,
+        Type: formData.Type === "" ? undefined : formData.Type
+      };
+      const response = await createPartner(submissionData);
+      console.log("Created Partner:", response);
+      onSuccess?.(response);
+      onClose();
+    } catch (error) {
+      console.error("Add failed:", error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -99,13 +92,16 @@ export default function AddPartnerModal({
             label="Partner Type"
             value={formData.Type ? [formData.Type] : []}
             onValueChange={(details) => {
+              console.log("Select details:", details);
+              // details.value is an array, get the first item
               const selectedValue = details.value[0] || "";
               handleChange("Type", selectedValue);
             }}
             items={[
-              { value: "Individual", label: "Individual" },
-              { value: "Company", label: "Company" },
-              { value: "Consultant", label: "Consultant" },
+              { value: "INDIVIDUAL", label: "INDIVIDUAL" },
+              { value: "COMPANY", label: "COMPANY" },
+              { value: "GOVERNMENT", label: "GOVERNMENT" },
+              { value: "NON_PROFIT", label: "NON_PROFIT" },
             ]}
           />
 
@@ -154,7 +150,12 @@ export default function AddPartnerModal({
           />
 
           <Flex justify="end">
-            <Button variant="primary" color="primary" className="mt-20 p-4" onClick={handleSubmit}>
+            <Button
+              variant="primary"
+              color="primary"
+              className="mt-20 p-4"
+              onClick={handleSubmit}
+            >
               Submit
             </Button>
           </Flex>
