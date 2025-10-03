@@ -14,7 +14,7 @@ import {
     Text,
     Upload,
 } from "@hdfclife-insurance/one-x-ui";
-import { uploadFile, fetchPartners } from '@/services/config.upload';
+import { uploadFile, fetchPartners, fetchLoaderConfigs, downloadFile } from '@/services/config.upload';
 import {
     ArrowDown,
     ArrowLeft,
@@ -53,57 +53,14 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
     return itemRank.passed;
 };
 
-type User = {
-    raisedOn: string;
-    frTitle: string;
-    frSubType: string;
-    frDescription: string;
+type LoaderConfig = {
+    id: string;
+    configId: string;
+    createdAt: string;
+    loaderType: string;
+    uploaderName: string;
+    excelFileId: string;
 };
-
-const tableData: User[] = [
-    {
-        raisedOn: "31/07/2024",
-        frTitle: "Data correction",
-        frSubType: "Data correction",
-        frDescription: "Customer date of birth needs to be updated",
-    },
-    {
-        raisedOn: "30/07/2024",
-        frTitle: "Address change",
-        frSubType: "Address change",
-        frDescription: "Update permanent residence address",
-    },
-    {
-        raisedOn: "29/07/2024",
-        frTitle: "Name correction",
-        frSubType: "Name correction",
-        frDescription: "Spelling correction in customer name",
-    },
-    {
-        raisedOn: "28/07/2024",
-        frTitle: "Contact update",
-        frSubType: "Contact update",
-        frDescription: "Mobile number needs to be changed",
-    },
-    {
-        raisedOn: "27/07/2024",
-        frTitle: "Bank details",
-        frSubType: "Bank details",
-        frDescription: "Update bank account information",
-    },
-    {
-        raisedOn: "26/07/2024",
-        frTitle: "Document upload",
-        frSubType: "Document upload",
-        frDescription: "New KYC documents pending",
-    },
-    {
-        raisedOn: "25/07/2024",
-        frTitle: "Premium payment",
-        frSubType: "Premium payment",
-        frDescription: "Change in premium payment mode",
-    },
-];
 
 export default function DashboardSection() {
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -115,6 +72,9 @@ export default function DashboardSection() {
     const [uploadLoading, setUploadLoading] = React.useState(false);
     const [partners, setPartners] = React.useState<{ id: number, name: string }[]>([]);
     const [partnersLoading, setPartnersLoading] = React.useState(false);
+    const [tableData, setTableData] = React.useState<LoaderConfig[]>([]);
+    const [tableLoading, setTableLoading] = React.useState(false);
+    const [selectedPartnerId, setSelectedPartnerId] = React.useState<string>('');
 
     // Fetch partners on component mount
     React.useEffect(() => {
@@ -126,7 +86,11 @@ export default function DashboardSection() {
                 console.log('✅ Partners fetched successfully:', response);
 
                 if (response.success && response.partners) {
-                    setPartners(response.partners);
+                    // Filter out any invalid partners
+                    const validPartners = response.partners.filter(
+                        (partner: any) => partner && partner.name && partner.id
+                    );
+                    setPartners(validPartners);
                 } else {
                     console.warn('⚠️ No partners found in response');
                     setPartners([]);
@@ -145,6 +109,41 @@ export default function DashboardSection() {
 
         loadPartners();
     }, []);
+
+    // Function to load loader configurations for selected partner
+    const loadLoaderConfigs = React.useCallback(async (partnerId: string) => {
+        if (!partnerId) {
+            setTableData([]);
+            return;
+        }
+
+        setTableLoading(true);
+        try {
+            console.log(`📋 Loading configs for partner ${partnerId}...`);
+            const response = await fetchLoaderConfigs(partnerId);
+
+            if (response.success && response.configs) {
+                setTableData(response.configs);
+                console.log('✅ Loader configs loaded successfully:', response.configs);
+            } else {
+                console.warn('⚠️ No configs found in response');
+                setTableData([]);
+            }
+        } catch (error: any) {
+            console.error('❌ Error loading loader configs:', error);
+            setTableData([]);
+            // You could show a toast/alert here instead of console.error
+        } finally {
+            setTableLoading(false);
+        }
+    }, []);
+
+    // Load configs when partner is selected
+    React.useEffect(() => {
+        if (selectedPartnerId) {
+            loadLoaderConfigs(selectedPartnerId);
+        }
+    }, [selectedPartnerId, loadLoaderConfigs]);
 
     // File upload handlers with API integration
     const handleFileAccept = React.useCallback(async (details: any) => {
@@ -260,66 +259,90 @@ export default function DashboardSection() {
         return errors.length > 0 ? errors : null;
     }, []);
 
-    const columnHelper = createColumnHelper<User>();
+    const columnHelper = createColumnHelper<LoaderConfig>();
 
     const columns = [
-        columnHelper.accessor("raisedOn", {
+        columnHelper.accessor("createdAt", {
             header: "Date",
-            cell: (info) => info.getValue(),
+            cell: (info) => {
+                const date = new Date(info.getValue());
+                return date.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            },
             enableSorting: true,
         }),
-        columnHelper.accessor("frTitle", {
+        columnHelper.accessor("id", {
             header: "Loader Id",
-            cell: (info) => info.getValue(),
+            cell: (info) => info.getValue().substring(0, 8) + '...', // Show first 8 chars
             enableSorting: true,
         }),
-        columnHelper.accessor("frSubType", {
+        columnHelper.accessor("configId", {
             header: "Template Name",
-            cell: (info) => info.getValue(),
+            cell: (info) => {
+                const configId = info.getValue();
+                // Extract template name from configId (after partnerId_)
+                const parts = configId.split('_');
+                return parts.length > 2 ? parts.slice(1, -1).join('_') : configId;
+            },
             enableSorting: true,
         }),
-        columnHelper.accessor("frDescription", {
+        columnHelper.accessor("loaderType", {
             header: "Loader Type",
             cell: (info) => (
                 <Button
                     variant="link-underline"
-                    color="blue"
+                    color="primary"
                     className="font-normal"
-                    endIcon={<Article />}
+                    // endIcon={<Article />}
                     size="sm"
                 >
                     {info.getValue()}
                 </Button>
             ),
             enableSorting: true,
-        }), columnHelper.accessor("frDescription", {
+        }),
+        columnHelper.accessor("uploaderName", {
             header: "Uploaded By",
             cell: (info) => (
-                <Button
-                    variant="link-underline"
-                    color="blue"
-                    className="font-normal"
-                    endIcon={<Article />}
-                    size="sm"
-                >
+                <Text size="sm" className="font-medium">
                     {info.getValue()}
-                </Button>
+                </Text>
             ),
             enableSorting: true,
-        }), columnHelper.accessor("frDescription", {
+        }),
+        columnHelper.display({
+            id: "action",
             header: "Action",
             cell: (info) => (
                 <Button
-                    variant="link-underline"
-                    color="blue"
-                    className="font-normal"
-                    endIcon={<Article />}
+                    variant="secondary"
+                    color="primary"
                     size="sm"
+                    onClick={async () => {
+                        const rowData = info.row.original;
+                        console.log('Download clicked for:', rowData);
+
+                        if (!rowData.excelFileId) {
+                            alert('❌ No file ID found for download');
+                            return;
+                        }
+
+                        try {
+                            console.log('📥 Downloading file with ID:', rowData.excelFileId);
+                            await downloadFile(rowData.excelFileId);
+                            // Success message is handled in the downloadFile function
+                        } catch (error: any) {
+                            console.error('❌ Download failed:', error);
+                            alert(`❌ Download failed: ${error.message || 'Unknown error'}`);
+                        }
+                    }}
                 >
-                    {info.getValue()}
+                    Download
                 </Button>
             ),
-            enableSorting: true,
         }),
     ];
 
@@ -364,8 +387,25 @@ export default function DashboardSection() {
                             const value = details.value?.[0] || details.value || '';
                             console.log('📋 Partner selected value:', value);
                             setSelectedDocumentType(value);
+
+                            // Find the selected partner's ID
+                            const selectedPartner = partners.find(partner => partner.name === value);
+                            if (selectedPartner) {
+                                console.log('🎯 Selected partner ID:', selectedPartner.id);
+                                setSelectedPartnerId(selectedPartner.id.toString());
+                            } else {
+                                setSelectedPartnerId('');
+                            }
                         }}
-                        items={partnersLoading ? ["Loading partners..."] : partners.map(partner => partner.name)}
+                        items={partnersLoading
+                            ? [{ label: "Loading partners...", value: "loading" }]
+                            : partners
+                                .filter(partner => partner && partner.name) // Filter out null/undefined partners
+                                .map(partner => ({
+                                    label: partner.name,
+                                    value: partner.name
+                                }))
+                        }
                         disabled={partnersLoading}
                     />
                     {partnersLoading && (
@@ -380,7 +420,7 @@ export default function DashboardSection() {
                     )}
                 </div>
                 <div className="space-y-4">
-                    {/* UI Library Upload Component */}
+                    {/* UI Library Upload Componevnt */}
                     <Upload
                         accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         allowDrop
@@ -417,70 +457,86 @@ export default function DashboardSection() {
                     </ScrollArea> */}
 
                     <TabsContent value="fr">
-                        <Table.ScrollContainer type="always">
-                            <Table withTableBorder>
-                                <Table.Head>
-                                    {table.getHeaderGroups().map((headerGroup, i) => (
-                                        <Table.Row key={i}>
-                                            {headerGroup.headers.map((header, i) => (
-                                                <Table.Th key={i} className="!py-4 bg-indigo-50">
-                                                    {header.isPlaceholder ? null : (
-                                                        <Flex gap={1} align="center">
-                                                            {flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext(),
-                                                            )}
-                                                            {header.column.getCanSort() && (
-                                                                <IconButton
-                                                                    variant="link"
-                                                                    color="gray"
-                                                                    size="xs"
-                                                                    onClick={header.column.getToggleSortingHandler()}
-                                                                >
-                                                                    {header.column.getIsSorted() === "asc" ? (
-                                                                        <ArrowUp />
-                                                                    ) : header.column.getIsSorted() === "desc" ? (
-                                                                        <ArrowDown />
-                                                                    ) : (
-                                                                        <ArrowsDownUp />
-                                                                    )}
-                                                                </IconButton>
-                                                            )}
-                                                        </Flex>
-                                                    )}
-                                                </Table.Th>
-                                            ))}
-                                        </Table.Row>
-                                    ))}
-                                </Table.Head>
-                                <Table.Body>
-                                    {table.getRowModel().rows.map((row, i) => (
-                                        <Table.Row key={i}>
-                                            {row.getVisibleCells().map((cell, cellIndex) => (
-                                                <Table.Cell key={cellIndex} className="!py-4">
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext(),
-                                                    )}
-                                                </Table.Cell>
-                                            ))}
-                                        </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table>
-                        </Table.ScrollContainer>
+                        {tableLoading ? (
+                            <div className="flex justify-center items-center py-8">
+                                <Text size="sm" className="text-gray-500">
+                                    🔄 Loading loader configurations...
+                                </Text>
+                            </div>
+                        ) : tableData.length === 0 ? (
+                            <div className="flex justify-center items-center py-8">
+                                <Text size="sm" className="text-gray-500">
+                                    {selectedPartnerId ? '📄 No loader configurations found for this partner' : '📊 Please select a partner to view loader configurations'}
+                                </Text>
+                            </div>
+                        ) : (
+                            <Table.ScrollContainer type="always">
+                                <Table withTableBorder>
+                                    <Table.Head>
+                                        {table.getHeaderGroups().map((headerGroup, i) => (
+                                            <Table.Row key={i}>
+                                                {headerGroup.headers.map((header, i) => (
+                                                    <Table.Th key={i} className="!py-4 bg-indigo-50">
+                                                        {header.isPlaceholder ? null : (
+                                                            <Flex gap={1} align="center">
+                                                                {flexRender(
+                                                                    header.column.columnDef.header,
+                                                                    header.getContext(),
+                                                                )}
+                                                                {header.column.getCanSort() && (
+                                                                    <IconButton
+                                                                        variant="link"
+                                                                        color="gray"
+                                                                        size="xs"
+                                                                        onClick={header.column.getToggleSortingHandler()}
+                                                                    >
+                                                                        {header.column.getIsSorted() === "asc" ? (
+                                                                            <ArrowUp />
+                                                                        ) : header.column.getIsSorted() === "desc" ? (
+                                                                            <ArrowDown />
+                                                                        ) : (
+                                                                            <ArrowsDownUp />
+                                                                        )}
+                                                                    </IconButton>
+                                                                )}
+                                                            </Flex>
+                                                        )}
+                                                    </Table.Th>
+                                                ))}
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Head>
+                                    <Table.Body>
+                                        {table.getRowModel().rows.map((row, i) => (
+                                            <Table.Row key={i}>
+                                                {row.getVisibleCells().map((cell, cellIndex) => (
+                                                    <Table.Cell key={cellIndex} className="!py-4">
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </Table.Cell>
+                                                ))}
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Body>
+                                </Table>
+                            </Table.ScrollContainer>
+                        )}
 
-                        <Flex justify="flex-end" className="mt-3">
-                            <Pagination
-                                count={tableData.length}
-                                onPrevious={() => table.previousPage()}
-                                onNext={() => table.nextPage()}
-                                pageSize={pagination.pageSize}
-                                onPageChange={(details: { page: number }) =>
-                                    table.setPageIndex(details.page - 1)
-                                }
-                            />
-                        </Flex>
+                        {!tableLoading && tableData.length > 0 && (
+                            <Flex justify="flex-end" className="mt-3">
+                                <Pagination
+                                    count={tableData.length}
+                                    onPrevious={() => table.previousPage()}
+                                    onNext={() => table.nextPage()}
+                                    pageSize={pagination.pageSize}
+                                    onPageChange={(details: { page: number }) =>
+                                        table.setPageIndex(details.page - 1)
+                                    }
+                                />
+                            </Flex>
+                        )}
                     </TabsContent>
                 </Tabs>
             </div>
