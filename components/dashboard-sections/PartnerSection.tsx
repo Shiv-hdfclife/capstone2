@@ -13,7 +13,7 @@
 "use client";
 
 import EyeModal from "@/components/Eye";
-import EditPartnerModal from "@/components/EditPartner";
+import EditPartnerModal, { PartnerType } from "@/components/EditPartner";
 import AddPartnerModal from "@/components/AddPartnerModal";
 import { fetchPartners, fetchPartnerById } from "@/services/api";
 import {
@@ -67,11 +67,12 @@ type User = {
     id: number;
     PartnerName?: string;
     email?: string;
-    Type?: string;
+    Type?: PartnerType;
     Location?: string;
     DateofAgreement?: string;
     phone?: string;
     actions?: string[];
+
 };
 
 const columnHelper = createColumnHelper<User>();

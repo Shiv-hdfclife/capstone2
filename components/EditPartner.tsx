@@ -10,7 +10,7 @@ import {
   DatePicker,
 } from "@hdfclife-insurance/one-x-ui";
 import { parseDate } from "@internationalized/date";
-import {updatePartner} from "@/services/api";
+import { updatePartner } from "@/services/api";
 import { useAppSelector } from "../store/hooks"; // Import your Redux hook
 
 const normalizeDateString = (dateString: string | undefined): string => {
@@ -25,7 +25,7 @@ const toISODateString = (dateString?: string): string | null => {
   return isNaN(date.getTime()) ? null : date.toISOString().split("T")[0];
 };
 
-type PartnerType = "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NON_PROFIT";
+export type PartnerType = "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NON_PROFIT";
 
 type EditPartnerProps = {
   id: number;
@@ -51,7 +51,7 @@ export default function EditPartner({
 }: EditPartnerProps) {
   // Get current logged-in user's name from Redux store
   const currentUserName = useAppSelector((state) => state.user.name);
-  
+
   const [formData, setFormData] = React.useState({
     ...data,
     PAN: data.PAN ?? "",

@@ -47,18 +47,19 @@ export default function DashboardPage() {
                     <div className="p-4 space-y-2">
                         <div
                             className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSectionClick('dashboard')}
-                        >
-                            <House />
-                            {leftSectionOpen && <span>Dashboard</span>}
-                        </div>
-                        <div
-                            className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
                             onClick={() => handleSectionClick('partner')}
                         >
                             <Handshake />
                             {leftSectionOpen && <span>Partner</span>}
                         </div>
+                        <div
+                            className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
+                            onClick={() => handleSectionClick('dashboard')}
+                        >
+                            <House />
+                            {leftSectionOpen && <span>Dashboard</span>}
+                        </div>
+
                         <div
                             className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-100"
                             onClick={() => handleSectionClick('loaders')}

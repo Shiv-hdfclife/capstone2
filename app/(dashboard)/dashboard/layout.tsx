@@ -9,7 +9,7 @@ import { UploadSimple, FileArrowDown, Bell } from "@phosphor-icons/react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { setLeftSection } from "../../../store/slices/sidebarSlice";
 import { logout } from "../../../store/slices/userSlice";
-import { uploadRawLoader } from "../../../services/config.upload";
+import { uploadRawLoader, fetchPartners } from "../../../services/config.upload";
 
 export default function DashboardLayout({
     children,
@@ -21,9 +21,46 @@ export default function DashboardLayout({
     const [selectedBusinessType, setSelectedBusinessType] = useState<string>('');
     const [selectedChannelType, setSelectedChannelType] = useState<string>('');
     const [uploadLoading, setUploadLoading] = useState(false);
+    const [partners, setPartners] = useState<{ id: number, name: string }[]>([]);
+    const [partnersLoading, setPartnersLoading] = useState(false);
+    const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
     const dispatch = useAppDispatch();
     const { leftSection } = useAppSelector((state) => state.sidebar);
-    const { isAuthenticated, name, role, loading } = useAppSelector((state) => state.user); const handlePressedChange = useCallback((pressed: boolean) => {
+    const { isAuthenticated, name, role, loading } = useAppSelector((state) => state.user);
+
+    // Fetch partners on component mount
+    React.useEffect(() => {
+        const loadPartners = async () => {
+            setPartnersLoading(true);
+            try {
+                console.log('📋 Fetching partners from API for layout...');
+                const response = await fetchPartners();
+                console.log('✅ Partners fetched successfully for layout:', response);
+
+                if (response.success && response.partners) {
+                    // Filter out any invalid partners
+                    const validPartners = response.partners.filter(
+                        (partner: any) => partner && partner.name && partner.id
+                    );
+                    setPartners(validPartners);
+                } else {
+                    console.warn('⚠️ No partners found in response');
+                    setPartners([]);
+                }
+            } catch (error: any) {
+                console.error('❌ Error fetching partners:', error);
+                // Fallback to default options if API fails
+                setPartners([
+                    { id: 1, name: "Default Partner 1" },
+                    { id: 2, name: "Default Partner 2" }
+                ]);
+            } finally {
+                setPartnersLoading(false);
+            }
+        };
+
+        loadPartners();
+    }, []); const handlePressedChange = useCallback((pressed: boolean) => {
         dispatch(setLeftSection(pressed));
     }, [dispatch]);
 
@@ -47,7 +84,7 @@ export default function DashboardLayout({
         }
 
         if (!selectedDocumentType) {
-            alert('❌ Please select a document type before uploading');
+            alert('❌ Please select a partner before uploading');
             return;
         }
 
@@ -248,21 +285,33 @@ export default function DashboardLayout({
 
                     <div className="mt-6 space-y-6">
                         <Select
-                            label="Please select your document type"
+                            label="Please select your partner"
                             value={selectedDocumentType ? [selectedDocumentType] : []}
                             onValueChange={(details: any) => {
-                                console.log('📋 Raw Loader Document type selected details:', details);
+                                console.log('📋 Partner selected details:', details);
                                 const value = details.value?.[0] || details.value || '';
-                                console.log('📋 Raw Loader Document type selected value:', value);
+                                console.log('📋 Partner selected value:', value);
                                 setSelectedDocumentType(value);
+
+                                // Find the selected partner's ID
+                                const selectedPartner = partners.find(partner => partner.name === value);
+                                if (selectedPartner) {
+                                    console.log('🎯 Selected partner ID:', selectedPartner.id);
+                                    setSelectedPartnerId(selectedPartner.id.toString());
+                                } else {
+                                    setSelectedPartnerId('');
+                                }
                             }}
-                            items={[
-                                "Aadhar Card",
-                                "PAN Card",
-                                "Voter ID",
-                                "Passport",
-                                "Driving License",
-                            ]}
+                            items={partnersLoading
+                                ? [{ label: "Loading partners...", value: "loading" }]
+                                : partners
+                                    .filter(partner => partner && partner.name) // Filter out null/undefined partners
+                                    .map(partner => ({
+                                        label: partner.name,
+                                        value: partner.name
+                                    }))
+                            }
+                            disabled={partnersLoading}
                         />
 
                         <Select
