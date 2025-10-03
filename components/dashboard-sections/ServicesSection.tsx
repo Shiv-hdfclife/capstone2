@@ -397,6 +397,8 @@ import {
 } from "@tanstack/react-table";
 import React, { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { useAppDispatch } from '../../store/hooks';
+import { setLoaderContent } from '../../store/slices/sidebarSlice';
 
 declare module "@tanstack/react-table" {
     interface FilterFns {
@@ -437,6 +439,7 @@ const getCommonPinningStyles = (column: Column<RawLoader>): CSSProperties => {
 
 export default function RawLoaderPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = React.useState({});
     const [pagination, setPagination] = React.useState<PaginationState>({
@@ -474,7 +477,8 @@ export default function RawLoaderPage() {
 
     const handleLoaderClick = (loaderId: string, loaderName: string) => {
         console.log(`Navigating to loader: ${loaderName} (ID: ${loaderId})`);
-        router.push(`/LoaderContent/${loaderId}`);
+        // Use Redux action instead of router.push
+        dispatch(setLoaderContent({ loaderId }));
     };
 
     const handleDownload = async (loaderId: string, fileName: string) => {
