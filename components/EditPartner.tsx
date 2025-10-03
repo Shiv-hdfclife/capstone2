@@ -11,6 +11,7 @@ import {
 } from "@hdfclife-insurance/one-x-ui";
 import { parseDate } from "@internationalized/date";
 import {updatePartner} from "@/services/api";
+import { useAppSelector } from "../store/hooks"; // Import your Redux hook
 
 const normalizeDateString = (dateString: string | undefined): string => {
   if (!dateString) return "";
@@ -24,12 +25,14 @@ const toISODateString = (dateString?: string): string | null => {
   return isNaN(date.getTime()) ? null : date.toISOString().split("T")[0];
 };
 
+type PartnerType = "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NON_PROFIT";
+
 type EditPartnerProps = {
   id: number;
   data: {
     PartnerName?: string;
     email?: string;
-    Type?: string;
+    Type?: PartnerType;
     PAN?: string;
     GST?: string;
     ContactAddress?: string;
@@ -46,6 +49,9 @@ export default function EditPartner({
   onClose,
   onSuccess,
 }: EditPartnerProps) {
+  // Get current logged-in user's name from Redux store
+  const currentUserName = useAppSelector((state) => state.user.name);
+  
   const [formData, setFormData] = React.useState({
     ...data,
     PAN: data.PAN ?? "",
@@ -60,8 +66,10 @@ export default function EditPartner({
 
   const handleSubmit = async () => {
     try {
+      // Pass the current user's name to updatePartner for X-Editor header
       const updated = await updatePartner(id, formData);
       console.log("Updated Partner:", updated);
+      console.log("Editor:", currentUserName); // Debug log to see who's editing
       onSuccess?.(updated);
       onClose();
     } catch (error) {
@@ -86,21 +94,22 @@ export default function EditPartner({
             value={formData.PartnerName ?? ""}
             onChange={(e) => handleChange("PartnerName", e.target.value)}
           />
-           <Select
-                      label="Partner Type"
-                      value={formData.Type ? [formData.Type] : []}
-                      onValueChange={(details) => {
-                        console.log("Select details:", details);
-                        // details.value is an array, get the first item
-                        const selectedValue = details.value[0] || "";
-                        handleChange("Type", selectedValue);
-                      }}
-                      items={[
-                        { value: "Individual", label: "Individual" },
-                        { value: "Company", label: "Company" },
-                        { value: "Consultant", label: "Consultant" },
-                      ]}
-                    />
+          <Select
+            label="Partner Type"
+            value={formData.Type ? [formData.Type] : []}
+            onValueChange={(details) => {
+              console.log("Select details:", details);
+              // details.value is an array, get the first item
+              const selectedValue = details.value[0] || "";
+              handleChange("Type", selectedValue);
+            }}
+            items={[
+              { value: "INDIVIDUAL", label: "INDIVIDUAL" },
+              { value: "COMPANY", label: "COMPANY" },
+              { value: "GOVERNMENT", label: "GOVERNMENT" },
+              { value: "NON_PROFIT", label: "NON_PROFIT" },
+            ]}
+          />
           <TextField
             label="Email"
             value={formData.email ?? ""}
@@ -111,11 +120,6 @@ export default function EditPartner({
             value={formData.phone ?? ""}
             onChange={(e) => handleChange("phone", e.target.value)}
           />
-          {/* <TextField
-            label="PAN Number"
-            value={formData.PAN}
-            onChange={(e) => handleChange("PAN", e.target.value)}
-          /> */}
           <TextField
             label="GST Number"
             value={formData.GST}

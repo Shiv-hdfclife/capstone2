@@ -19,7 +19,7 @@ import {
   fetchRawLoaders,
   downloadLoaderFile,
   type RawLoader,
-} from "@/loaderServices/rawLoaderApi";
+} from "@/services/rawLoaderApi";
 import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
 import {
   Column,

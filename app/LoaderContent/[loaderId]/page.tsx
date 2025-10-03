@@ -47,7 +47,7 @@ import {
   fetchRejectedRecords,
   type LoaderContent,
   type MemberRecord,
-} from "@/loaderServices/loaderContentApi";
+} from "../../../services/loaderContentApi";
 
 declare module "@tanstack/react-table" {
   interface FilterFns {

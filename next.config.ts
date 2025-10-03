@@ -26,7 +26,16 @@ const nextConfig: NextConfig = {
         // source: "/api/partners/:path*", 
         // destination: "http://192.168.87.150:8088/partners/:path*",
         source: '/api/backend/:path*',
-        destination: 'http://192.168.254.77:8088/:path*',
+        destination: 'http://192.168.254.77/:path*',
+      },
+      {
+        source: '/api/partners/:path*',
+        destination: 'http://192.168.254.77:8088/partners/:path*',
+      },
+      // Partner API (singular) - for PATCH single partner
+      {
+        source: '/api/partner/:path*',
+        destination: 'http://192.168.254.77:8088/partner/:path*',
       },
     ];
   },

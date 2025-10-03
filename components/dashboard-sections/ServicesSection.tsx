@@ -15,7 +15,7 @@ import {
     colors,
 } from "@hdfclife-insurance/one-x-ui";
 import { ArrowDown, ArrowUp, ArrowsDownUp } from "@phosphor-icons/react";
-import rawLoaderApi, { RawLoader } from "@/services/rawLoaderApi";
+import {fetchRawLoaders, type RawLoader} from "@/services/rawLoaderApi";
 import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
 import {
     Column,
@@ -50,19 +50,8 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
     return itemRank.passed;
 };
 
-type User = {
-    Date: string;
-    LoaderID: string;
-    LoaderName: string;
-    LoaderType: string;
-    Partner: string;
-    Pending: number;
-    TotalMembers: number;
-    //dob: string;
-    actions?: string;
-};
-
-const getCommonPinningStyles = (column: Column<User>): CSSProperties => {
+// Use RawLoader type instead of User
+const getCommonPinningStyles = (column: Column<RawLoader>): CSSProperties => {
     const isPinned = column.getIsPinned();
     const isLastLeftPinnedColumn =
         isPinned === "left" && column.getIsLastColumn("left");
@@ -87,17 +76,18 @@ const getCommonPinningStyles = (column: Column<User>): CSSProperties => {
 export default function DashboardTable() {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [rowSelection, setRowSelection] = React.useState({});
+    const [loading, setLoading] = React.useState(false);
 
     const [pagination, setPagination] = React.useState<PaginationState>({
         pageIndex: 0,
         pageSize: 10,
     });
-    const columnHelper = createColumnHelper<User>();
+    const columnHelper = createColumnHelper<RawLoader>();
 
     const columns = [
         {
             id: "select",
-            header: ({ table }: { table: ReactTable<User> }) => (
+            header: ({ table }: { table: ReactTable<RawLoader> }) => (
                 <Checkbox
                     checked={
                         table.getIsAllRowsSelected()
@@ -118,7 +108,14 @@ export default function DashboardTable() {
         },
         columnHelper.accessor("Date", {
             header: "Date",
-            cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+            cell: (info) => {
+                const dateValue = info.getValue();
+                try {
+                    return new Date(dateValue).toLocaleDateString();
+                } catch {
+                    return dateValue;
+                }
+            },
             enableSorting: true,
         }),
         columnHelper.accessor("LoaderID", {
@@ -152,6 +149,19 @@ export default function DashboardTable() {
             cell: (info) => info.getValue(),
             enableSorting: true,
         }),
+        columnHelper.accessor("Status", {
+            header: "Status",
+            cell: (info) => (
+                <span className={`px-2 py-1 rounded text-xs ${
+                    info.getValue() === 'imported' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                    {info.getValue()}
+                </span>
+            ),
+            enableSorting: true,
+        }),
         columnHelper.accessor("actions", {
             id: "action",
             header: "Actions",
@@ -170,14 +180,25 @@ export default function DashboardTable() {
     const [totalCount, setTotalCount] = React.useState(0);
     const [globalFilter, setGlobalFilter] = React.useState("");
 
+    // Fix the useEffect - Correct API call
     React.useEffect(() => {
         async function fetchLoaders() {
-            const response = await rawLoaderApi.get(
-                `/api/raw-loaders?page=${pagination.pageIndex + 1}&pageSize=${pagination.pageSize
-                }&search=${globalFilter}`
-            );
-            setTableData(response.data);
-            setTotalCount(response.total);
+            setLoading(true);
+            try {
+                const response = await fetchRawLoaders(
+                    pagination.pageIndex + 1,
+                    pagination.pageSize,
+                    globalFilter
+                );
+                setTableData(response.data);
+                setTotalCount(response.total);
+            } catch (error) {
+                console.error("Failed to fetch raw loaders:", error);
+                setTableData([]);
+                setTotalCount(0);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchLoaders();
     }, [pagination.pageIndex, pagination.pageSize, globalFilter]);
@@ -186,17 +207,13 @@ export default function DashboardTable() {
         data: tableData,
         columns,
         getCoreRowModel: getCoreRowModel(),
-
         getSortedRowModel: getSortedRowModel(),
         onSortingChange: setSorting,
-
         onRowSelectionChange: setRowSelection,
         enableRowSelection: true,
-
         manualPagination: true,
         pageCount: Math.ceil(totalCount / pagination.pageSize),
         onPaginationChange: setPagination,
-
         filterFns: {
             fuzzy: fuzzyFilter,
         },
@@ -213,20 +230,22 @@ export default function DashboardTable() {
     });
 
     return (
-        // custom properties for the layout
         <div className="min-h-dvh flex flex-col bg-gray-100 [--gutter:24px] [--header-height:68px]">
             <div>
                 <form className="space-y-1">
                     <div className="grid lg:grid-cols-4 gap-4 items-end">
                         <Select label="View by" items={["All Partners"]} name="partner" />
-
                         <Select items={["All Loader Types"]} name="policies" />
                         <Button variant="tertiary" type="reset">
                             Reset
                         </Button>
                     </div>
                     <div className="flex space-x-4">
-                        <Search placeholder="Search by Partner, Loader name, Loader ID, Loader type or Uploaded by " />
+                        <Search 
+                            placeholder="Search by Partner, Loader name, Loader ID, Loader type or Uploaded by"
+                            value={globalFilter}
+                            onChange={(e) => setGlobalFilter(e.target.value)}
+                        />
                         <Button>Search</Button>
                     </div>
                 </form>
@@ -282,24 +301,38 @@ export default function DashboardTable() {
                                         ))}
                                     </Table.Head>
                                     <Table.Body>
-                                        {table.getRowModel().rows.map((row, i) => (
-                                            <Table.Row key={i}>
-                                                {row.getVisibleCells().map((cell, cellIndex) => (
-                                                    <Table.Cell
-                                                        key={cellIndex}
-                                                        className="!py-4"
-                                                        style={{
-                                                            ...getCommonPinningStyles(cell.column),
-                                                        }}
-                                                    >
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )}
-                                                    </Table.Cell>
-                                                ))}
+                                        {loading ? (
+                                            <Table.Row>
+                                                <Table.Cell {...{ colSpan: columns.length }} className="text-center py-8">
+                                                    Loading...
+                                                </Table.Cell>
                                             </Table.Row>
-                                        ))}
+                                        ) : table.getRowModel().rows.length > 0 ? (
+                                            table.getRowModel().rows.map((row, i) => (
+                                                <Table.Row key={i}>
+                                                    {row.getVisibleCells().map((cell, cellIndex) => (
+                                                        <Table.Cell
+                                                            key={cellIndex}
+                                                            className="!py-4"
+                                                            style={{
+                                                                ...getCommonPinningStyles(cell.column),
+                                                            }}
+                                                        >
+                                                            {flexRender(
+                                                                cell.column.columnDef.cell,
+                                                                cell.getContext()
+                                                            )}
+                                                        </Table.Cell>
+                                                    ))}
+                                                </Table.Row>
+                                            ))
+                                        ) : (
+                                            <Table.Row>
+                                                <Table.Cell {...{ colSpan: columns.length }} className="text-center py-8">
+                                                    No loaders found
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        )}
                                     </Table.Body>
                                 </Table>
                             </Table.ScrollContainer>
