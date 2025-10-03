@@ -31,7 +31,7 @@ export default function SettingsSection() {
                             </div>
                             <Switch
                                 checked={notifications}
-                                onCheckedChange={details => setNotifications(details.checked)}
+                                onCheckedChange={(details) => setNotifications(details.checked)}
                             />
                         </div>
 
@@ -44,7 +44,7 @@ export default function SettingsSection() {
                             </div>
                             <Switch
                                 checked={emailAlerts}
-                                onCheckedChange={details => setEmailAlerts(details.checked)}
+                                onCheckedChange={(details) => setEmailAlerts(details.checked)}
                             />
                         </div>
                     </div>
@@ -64,7 +64,7 @@ export default function SettingsSection() {
                             </div>
                             <Switch
                                 checked={autoBackup}
-                                onCheckedChange={details => setAutoBackup(details.checked)}
+                                onCheckedChange={(details) => setAutoBackup(details.checked)}
                             />
                         </div>
                     </div>
@@ -75,13 +75,13 @@ export default function SettingsSection() {
                         Account
                     </Text>
                     <div className="space-y-3">
-                        <Button variant="secondary" className="w-full justify-start">
+                        <Button className="w-full justify-start">
                             Change Password
                         </Button>
-                        <Button variant="secondary" className="w-full justify-start">
+                        <Button className="w-full justify-start">
                             Update Profile
                         </Button>
-                        <Button variant="secondary" className="w-full justify-start text-red-600 border-red-300">
+                        <Button className="w-full justify-start text-red-600 border-red-300">
                             Delete Account
                         </Button>
                     </div>
