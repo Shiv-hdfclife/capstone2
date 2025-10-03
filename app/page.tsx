@@ -1,9 +1,7 @@
-import React from 'react'
+'use client'
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>Hello from SHIVAM MISHRA</div>
-  )
+export default function Home() {
+  redirect("/login")
 }
 
-export default page
