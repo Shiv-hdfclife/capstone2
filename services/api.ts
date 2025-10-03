@@ -75,7 +75,7 @@ export const fetchPartnerById = async (id: number): Promise<Partner> => {
 };
 
 // Create a new partner
-export const createPartner = async (data: Partial<Partner>): Promise<Partner> => {
+export const createPartner = async (data: Partial<Partner>, editorUsername?: string): Promise<Partner> => {
   try {
     // Convert partner type to backend enum format
     const convertPartnerType = (type: string | undefined): string | undefined => {
@@ -98,7 +98,7 @@ export const createPartner = async (data: Partial<Partner>): Promise<Partner> =>
     const payload = {
       name: data.PartnerName,
       email: data.email,
-      partnerType: convertPartnerType(data.Type), // Convert to proper enum
+      partnerType: convertPartnerType(data.Type),
       contactNumber: data.phone,
       address: data.ContactAddress,
       dateOfAgreement: data.DateofAgreement,
@@ -107,8 +107,15 @@ export const createPartner = async (data: Partial<Partner>): Promise<Partner> =>
     };
 
     console.log('Create payload:', payload);
+    console.log('Create editor:', editorUsername);
 
-    const res = await axiosInstance.post("/api/partner", payload);
+    // Add X-Editor header to the POST request
+    const res = await axiosInstance.post("/api/partner", payload, {
+      headers: {
+        'X-Editor': editorUsername || 'adminUser'
+      }
+    });
+    
     return res.data;
   } catch (error: any) {
     throw {

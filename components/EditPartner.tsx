@@ -67,7 +67,11 @@ export default function EditPartner({
   const handleSubmit = async () => {
     try {
       // Pass the current user's name to updatePartner for X-Editor header
-      const updated = await updatePartner(id, formData);
+      const updated = await updatePartner(
+        id,
+        formData,
+        currentUserName || "adminUser"
+      );
       console.log("Updated Partner:", updated);
       console.log("Editor:", currentUserName); // Debug log to see who's editing
       onSuccess?.(updated);
@@ -99,8 +103,7 @@ export default function EditPartner({
             value={formData.Type ? [formData.Type] : []}
             onValueChange={(details) => {
               console.log("Select details:", details);
-              // details.value is an array, get the first item
-              const selectedValue = details.value[0] || "";
+              const selectedValue = details.value[0] as PartnerType; // 👈 Cast to PartnerType
               handleChange("Type", selectedValue);
             }}
             items={[
@@ -110,6 +113,7 @@ export default function EditPartner({
               { value: "NON_PROFIT", label: "NON_PROFIT" },
             ]}
           />
+
           <TextField
             label="Email"
             value={formData.email ?? ""}
@@ -155,3 +159,4 @@ export default function EditPartner({
     </div>
   );
 }
+

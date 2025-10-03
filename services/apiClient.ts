@@ -14,21 +14,10 @@ axiosInstance.interceptors.request.use(
   (config) => {
     console.log(`🚀 API Call: ${config.method?.toUpperCase()} ${config.url}`);
     
-    // Add X-Editor header only for PATCH requests (updates)
-    if (config.method?.toLowerCase() === 'patch') {
-      // Get current user name from Redux store
-      const state = store.getState();
-      const currentUserName = state.user.name || 'adminUser'; // Fallback to adminUser
-      
-      config.headers['X-Editor'] = currentUserName;
-      console.log(`📝 Adding X-Editor header for PATCH: ${currentUserName}`);
-    }
-    
     const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
     return config;
   },
   (error) => {
