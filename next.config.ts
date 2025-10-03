@@ -1,27 +1,29 @@
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
-      // Partners API (existing)
+
+
       {
         source: "/api/partners/:path*",
         destination: "http://192.168.87.150:8088/partners/:path*", // Partners backend
       },
-      // Raw Loaders API (new)
+
+      // Raw Loaders API - Route to the correct backend
       {
-        source: "/api/raw-loaders/:path*", 
-        destination: "http://192.168.254.77:8088/raw-loaders/:path*", // Raw Loaders backend
+        source: "/api/partners/raw-loaders",
+        destination: "http://192.168.254.74:8989/api/partners/raw-loaders",
       },
-      // Loader Content API (new)
       {
-        source: "/api/loader-content/:path*",
-        destination: "http://192.168.254.77:8088/loader-content/:path*", // Loader Content backend
+        source: "/api/partners/raw-loaders/:id/download",
+        destination: "http://192.168.254.74:8989/api/partners/raw-loaders/:id/download",
       },
-      // Generic fallback for other APIs
+      // Partners management (existing)
       {
-        source: "/api/:path*",
-        destination: "http://192.168.254.77:8088/:path*", // Default backend
+        source: "/api/partners/:path*", 
+        destination: "http://192.168.87.150:8088/partners/:path*",
       },
     ];
   },

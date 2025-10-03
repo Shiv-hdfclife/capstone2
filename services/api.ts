@@ -99,7 +99,7 @@ export const createPartner = async (data: Partial<Partner>): Promise<Partner> =>
 // Update an existing partner
 export const updatePartner = async (id: number, data: Partial<Partner>): Promise<Partner> => {
   try {
-    const res = await axiosInstance.put(`/partners/${id}`, data);
+    const res = await axiosInstance.patch(`/partners/${id}`, data);
     return res.data;
   } catch (error: any) {
     throw {

@@ -15,7 +15,11 @@ import {
   colors,
 } from "@hdfclife-insurance/one-x-ui";
 import { ArrowDown, ArrowUp, ArrowsDownUp } from "@phosphor-icons/react";
-import { fetchRawLoaders, downloadLoaderFile, type RawLoader } from "@/loaderServices/rawLoaderApi";
+import {
+  fetchRawLoaders,
+  downloadLoaderFile,
+  type RawLoader,
+} from "@/loaderServices/rawLoaderApi";
 import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
 import {
   Column,
@@ -124,6 +128,7 @@ export default function RawLoaderPage() {
   };
 
   const columnHelper = createColumnHelper<RawLoader>();
+
   const columns = [
     {
       id: "select",
@@ -160,10 +165,9 @@ export default function RawLoaderPage() {
       header: "Loader Name",
       cell: (info) => (
         <button
-          onClick={() => handleLoaderClick(
-            info.row.original.LoaderID,
-            info.getValue()
-          )}
+          onClick={() =>
+            handleLoaderClick(info.row.original.LoaderID, info.getValue())
+          }
           className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium transition-colors duration-200"
         >
           {info.getValue()}
@@ -187,8 +191,27 @@ export default function RawLoaderPage() {
       cell: (info) => info.getValue(),
       enableSorting: true,
     }),
-    columnHelper.accessor("Pending", {
-      header: "Pending",
+    columnHelper.accessor("Status", {
+      // Add Status column
+      header: "Status",
+      cell: (info) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            info.getValue() === "imported"
+              ? "bg-green-100 text-green-800"
+              : info.getValue() === "partial"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {info.getValue()}
+        </span>
+      ),
+      enableSorting: true,
+    }),
+    columnHelper.accessor("ErrorRows", {
+      // Add Error Rows column instead of Pending
+      header: "Error Rows",
       cell: (info) => info.getValue(),
       enableSorting: true,
     }),
@@ -202,12 +225,16 @@ export default function RawLoaderPage() {
           variant="link"
           color="blue"
           disabled={downloadingId === info.row.original.LoaderID}
-          onClick={() => handleDownload(
-            info.row.original.LoaderID,
-            info.row.original.LoaderName
-          )}
+          onClick={() =>
+            handleDownload(
+              info.row.original.LoaderID,
+              info.row.original.LoaderName
+            )
+          }
         >
-          {downloadingId === info.row.original.LoaderID ? "Downloading..." : "Download"}
+          {downloadingId === info.row.original.LoaderID
+            ? "Downloading..."
+            : "Download"}
         </Button>
       ),
     }),
@@ -293,7 +320,8 @@ export default function RawLoaderPage() {
                                   >
                                     {header.column.getIsSorted() === "asc" ? (
                                       <ArrowUp />
-                                    ) : header.column.getIsSorted() === "desc" ? (
+                                    ) : header.column.getIsSorted() ===
+                                      "desc" ? (
                                       <ArrowDown />
                                     ) : (
                                       <ArrowsDownUp />
@@ -310,7 +338,10 @@ export default function RawLoaderPage() {
                   <Table.Body>
                     {loading ? (
                       <Table.Row>
-                        <td colSpan={columns.length} className="text-center py-8">
+                        <td
+                          colSpan={columns.length}
+                          className="text-center py-8"
+                        >
                           Loading raw loaders...
                         </td>
                       </Table.Row>
@@ -333,7 +364,10 @@ export default function RawLoaderPage() {
                       ))
                     ) : (
                       <Table.Row>
-                        <td colSpan={columns.length} className="text-center py-8">
+                        <td
+                          colSpan={columns.length}
+                          className="text-center py-8"
+                        >
                           No raw loaders found
                         </td>
                       </Table.Row>

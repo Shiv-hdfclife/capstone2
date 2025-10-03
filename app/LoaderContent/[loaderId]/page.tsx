@@ -17,7 +17,12 @@ import {
   Text,
   colors,
 } from "@hdfclife-insurance/one-x-ui";
-import { ArrowDown, ArrowUp, ArrowsDownUp, ArrowLeft } from "@phosphor-icons/react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowsDownUp,
+  ArrowLeft,
+} from "@phosphor-icons/react";
 import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
 import {
   Column,
@@ -59,7 +64,9 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed;
 };
 
-const getCommonPinningStyles = (column: Column<MemberRecord>): CSSProperties => {
+const getCommonPinningStyles = (
+  column: Column<MemberRecord>
+): CSSProperties => {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
     isPinned === "left" && column.getIsLastColumn("left");
@@ -87,7 +94,9 @@ export default function LoaderContentPage() {
   const loaderId = params.loaderId as string;
 
   // States for loader details
-  const [loaderData, setLoaderData] = React.useState<LoaderContent | null>(null);
+  const [loaderData, setLoaderData] = React.useState<LoaderContent | null>(
+    null
+  );
   const [loadingLoader, setLoadingLoader] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -100,7 +109,7 @@ export default function LoaderContentPage() {
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
-  
+
   // Separate data states for all three tabs
   const [allData, setAllData] = React.useState<MemberRecord[]>([]);
   const [allCount, setAllCount] = React.useState(0);
@@ -122,7 +131,7 @@ export default function LoaderContentPage() {
         const loader = await fetchLoaderContent(loaderId);
         setLoaderData(loader);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load loader');
+        setError(err instanceof Error ? err.message : "Failed to load loader");
       } finally {
         setLoadingLoader(false);
       }
@@ -136,7 +145,7 @@ export default function LoaderContentPage() {
   // Load all records
   const loadAllRecords = React.useCallback(async () => {
     if (!loaderId || !loaderData) return;
-    
+
     setAllLoading(true);
     try {
       const response = await fetchMemberRecords(
@@ -154,12 +163,18 @@ export default function LoaderContentPage() {
     } finally {
       setAllLoading(false);
     }
-  }, [loaderId, loaderData, pagination.pageIndex, pagination.pageSize, globalFilter]);
+  }, [
+    loaderId,
+    loaderData,
+    pagination.pageIndex,
+    pagination.pageSize,
+    globalFilter,
+  ]);
 
   // Load issued records
   const loadIssuedRecords = React.useCallback(async () => {
     if (!loaderId || !loaderData) return;
-    
+
     setIssuedLoading(true);
     try {
       const response = await fetchIssuedRecords(
@@ -177,12 +192,18 @@ export default function LoaderContentPage() {
     } finally {
       setIssuedLoading(false);
     }
-  }, [loaderId, loaderData, pagination.pageIndex, pagination.pageSize, globalFilter]);
+  }, [
+    loaderId,
+    loaderData,
+    pagination.pageIndex,
+    pagination.pageSize,
+    globalFilter,
+  ]);
 
   // Load rejected records
   const loadRejectedRecords = React.useCallback(async () => {
     if (!loaderId || !loaderData) return;
-    
+
     setRejectedLoading(true);
     try {
       const response = await fetchRejectedRecords(
@@ -200,7 +221,13 @@ export default function LoaderContentPage() {
     } finally {
       setRejectedLoading(false);
     }
-  }, [loaderId, loaderData, pagination.pageIndex, pagination.pageSize, globalFilter]);
+  }, [
+    loaderId,
+    loaderData,
+    pagination.pageIndex,
+    pagination.pageSize,
+    globalFilter,
+  ]);
 
   // Load data based on active tab
   React.useEffect(() => {
@@ -221,17 +248,25 @@ export default function LoaderContentPage() {
   // Get current data based on active tab
   const getCurrentData = () => {
     switch (activeTab) {
-      case "issued": 
+      case "issued":
         return { data: issuedData, count: issuedCount, loading: issuedLoading };
-      case "rejected": 
-        return { data: rejectedData, count: rejectedCount, loading: rejectedLoading };
+      case "rejected":
+        return {
+          data: rejectedData,
+          count: rejectedCount,
+          loading: rejectedLoading,
+        };
       case "all":
-      default: 
+      default:
         return { data: allData, count: allCount, loading: allLoading };
     }
   };
 
-  const { data: currentData, count: currentCount, loading: currentLoading } = getCurrentData();
+  const {
+    data: currentData,
+    count: currentCount,
+    loading: currentLoading,
+  } = getCurrentData();
 
   // Column definition
   const columnHelper = createColumnHelper<MemberRecord>();
@@ -259,7 +294,17 @@ export default function LoaderContentPage() {
     },
     columnHelper.accessor("rcd", {
       header: "RCD",
-      cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+      cell: (info) => {
+        const dateValue = info.getValue();
+        if (!dateValue) return "-";
+
+        try {
+          const date = new Date(dateValue);
+          return isNaN(date.getTime()) ? dateValue : date.toLocaleDateString();
+        } catch {
+          return dateValue;
+        }
+      },
       enableSorting: true,
     }),
     columnHelper.accessor("lan", {
@@ -281,12 +326,17 @@ export default function LoaderContentPage() {
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          info.getValue() === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-          info.getValue() === 'Rejected' ? 'bg-red-100 text-red-800' :
-          info.getValue() === 'Issued' ? 'bg-green-100 text-green-800' :
-          'bg-blue-100 text-blue-800'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            info.getValue() === "Pending"
+              ? "bg-yellow-100 text-yellow-800"
+              : info.getValue() === "Rejected"
+              ? "bg-red-100 text-red-800"
+              : info.getValue() === "Issued"
+              ? "bg-green-100 text-green-800"
+              : "bg-blue-100 text-blue-800"
+          }`}
+        >
           {info.getValue()}
         </span>
       ),
@@ -357,7 +407,7 @@ export default function LoaderContentPage() {
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
           <Text color="red">{error || "Loader not found"}</Text>
-          <Button onClick={() => router.push('/rawLoader')} className="mt-4">
+          <Button onClick={() => router.push("/rawLoader")} className="mt-4">
             Back to Raw Loaders
           </Button>
         </div>
@@ -365,13 +415,21 @@ export default function LoaderContentPage() {
     );
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Reset pagination when switching tabs
+    setPagination({ pageIndex: 0, pageSize: 10 });
+    // Reset row selection
+    setRowSelection({});
+  };
+
   return (
     <div className="min-h-dvh flex flex-col p-6 bg-gray-100">
       {/* Back Button */}
       <Flex align="center" gap="md" className="mb-4">
         <Button
           variant="tertiary"
-          onClick={() => router.push('/rawLoader')}
+          onClick={() => router.push("/rawLoader")}
           className="flex items-center gap-2"
         >
           <ArrowLeft size={16} />
@@ -387,23 +445,36 @@ export default function LoaderContentPage() {
               {loaderData.name}
             </Text>
             <Text size="sm" color="gray">
-              {loaderData.partner} • {loaderData.loaderType} • {new Date(loaderData.uploadDate).toLocaleDateString()}
+              {loaderData.partner} • {loaderData.loaderType} •{" "}
+              {new Date(loaderData.uploadDate).toLocaleDateString()}
             </Text>
           </div>
         </Flex>
-        
+
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <Text size="sm" color="gray">Total Members</Text>
-            <Text fontWeight="bold" size="lg">{loaderData.totalMembers}</Text>
+            <Text size="sm" color="gray">
+              Total Members
+            </Text>
+            <Text fontWeight="bold" size="lg">
+              {loaderData.totalMembers}
+            </Text>
           </div>
           <div className="text-center p-3 bg-green-50 rounded-lg">
-            <Text size="sm" color="gray">Issued</Text>
-            <Text fontWeight="bold" size="lg" color="green">{loaderData.issuedMembers || 0}</Text>
+            <Text size="sm" color="gray">
+              Issued
+            </Text>
+            <Text fontWeight="bold" size="lg" color="green">
+              {loaderData.issuedMembers || 0}
+            </Text>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-lg">
-            <Text size="sm" color="gray">Rejected</Text>
-            <Text fontWeight="bold" size="lg" color="red">{loaderData.rejectedMembers}</Text>
+            <Text size="sm" color="gray">
+              Rejected
+            </Text>
+            <Text fontWeight="bold" size="lg" color="red">
+              {loaderData.rejectedMembers}
+            </Text>
           </div>
         </div>
       </div>
@@ -438,7 +509,12 @@ export default function LoaderContentPage() {
           <Button>Add EMIF</Button>
         </div>
 
-        <Tabs size="sm" value={activeTab} onValueChange={(details) => setActiveTab(details.value)} variant="underline">
+        <Tabs
+          size="sm"
+          value={activeTab}
+          onValueChange={(details) => handleTabChange(details.value)}
+          variant="underline"
+        >
           <ScrollArea>
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
@@ -446,7 +522,7 @@ export default function LoaderContentPage() {
               <TabsTrigger value="rejected">Rejected</TabsTrigger>
             </TabsList>
           </ScrollArea>
-          
+
           <div className="mt-2 text-sm text-gray-500">
             Results: {currentCount}
           </div>
@@ -501,7 +577,7 @@ export default function LoaderContentPage() {
                       </td>
                     </Table.Row>
                   ) : table.getRowModel().rows.length > 0 ? (
-                     table.getRowModel().rows.map((row, i) => (
+                    table.getRowModel().rows.map((row, i) => (
                       <Table.Row key={i}>
                         {row.getVisibleCells().map((cell, cellIndex) => (
                           <Table.Cell
