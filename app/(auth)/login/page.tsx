@@ -249,7 +249,7 @@ const Login = () => {
     };
 
     return (
-        <div className="flex flex-col justify-center lg:min-h-dvh lg:px-10">
+        <div className="flex flex-col justify-center min-h-screen lg:min-h-dvh px-4 lg:px-10 py-8">
             {/* Main content  */}
             <main className="flex justify-center items-center flex-1">
                 <div className="w-full space-y-4 max-w-md">
@@ -257,20 +257,20 @@ const Login = () => {
                     <Card
                         className="border-none"
                         classNames={{
-                            content: "!gap-5 ",
+                            content: "!gap-4 lg:!gap-5 p-4 lg:p-6",
                         }}
                     >
-                        <Image src={Logo} className="w-15 h-15" alt="logo" />
+                        <Image src={Logo} className="w-12 h-12 lg:w-15 lg:h-15 mx-auto" alt="logo" />
                         <div className="space-y-2 text-start">
-                            <Heading as="h3">{showSignup ? "Create Account" : "Welcome back,"}</Heading>
-                            <Caption className="text-gray-700">
+                            <Heading as="h3" className="text-lg lg:text-xl">{showSignup ? "Create Account" : "Welcome back,"}</Heading>
+                            <Caption className="text-gray-700 text-sm">
                                 {showSignup ? "Sign up to get started" : "Login to get Started"}
                             </Caption>
                         </div>
 
                         {!showSignup ? (
                             // Login Form
-                            <form className="space-y-4" onSubmit={handleLogin}>
+                            <form className="space-y-3 lg:space-y-4" onSubmit={handleLogin}>
                                 {error && (
                                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                                         ❌ {error}
@@ -314,7 +314,7 @@ const Login = () => {
                                     }
                                 />
 
-                                <div className="flex justify-between items-center gap-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
                                     <Checkbox
                                         label="Remember Me"
                                         size="sm"
@@ -332,6 +332,7 @@ const Login = () => {
                                     fullWidth
                                     type="submit"
                                     disabled={loading || !username.trim() || !password.trim()}
+                                    className="mt-4 lg:mt-6"
                                 >
                                     {loading ? "Signing in..." : "Login"}
                                 </Button>
@@ -353,7 +354,7 @@ const Login = () => {
                             </form>
                         ) : (
                             // Signup Form
-                            <form className="space-y-4" onSubmit={handleSignup}>
+                            <form className="space-y-3 lg:space-y-4" onSubmit={handleSignup}>
                                 {signupError && (
                                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                                         ❌ {signupError}
@@ -429,6 +430,7 @@ const Login = () => {
                                     type="submit"
                                     disabled={signupLoading || !signupData.name.trim() || !signupData.email.trim() ||
                                         !signupData.username.trim() || !signupData.password.trim() || !signupData.phoneNumber.trim()}
+                                    className="mt-4 lg:mt-6"
                                 >
                                     {signupLoading ? "Creating Account..." : "Sign Up"}
                                 </Button>
@@ -557,32 +559,32 @@ export default function DashboardLogin() {
         },
     ];
     return (
-        <div className="flex flex-row">
-            <div className="flex flex-col w-[60%] bg-primary-blue-50 relative before:absolute before:inset-0 before:bg-white/20 before:backdrop-blur-3xl before:z-[-1]">
+        <div className="flex flex-col lg:flex-row min-h-screen">
+            <div className="w-full lg:w-[60%] bg-primary-blue-50 relative before:absolute before:inset-0 before:bg-white/20 before:backdrop-blur-3xl before:z-[-1]">
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     style={{
                         backgroundImage: "url('https://helixassets.apps-hdfclife.com/images/plain/agent/Agent_1.png')"
                     }}
                 />
-                <div className="px-6 py-10 lg:px-20 lg:pt-16 2xl:px-24 2xl:pt-24 pb-10 space-y-7 relative z-10">
+                <div className="px-6 py-8 lg:px-20 lg:pt-16 2xl:px-24 2xl:pt-24 pb-8 lg:pb-10 space-y-4 lg:space-y-7 relative z-10">
                     <Heading
                         fontWeight="bold"
-                        className="text-3xl/snug text-center 2xl:text-4xl/snug !text-white"
+                        className="text-xl lg:text-3xl/snug text-center 2xl:text-4xl/snug !text-white"
                     >
                         Access Your Policy Details Instantly
                     </Heading>
 
-                    <div className="flex justify-center gap-6 mt-auto">
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 lg:gap-6 mt-auto">
                         {features.map((feature, index) => (
                             <Card
                                 key={index}
                                 classNames={{
-                                    content: "p-4",
+                                    content: "p-3 lg:p-4",
                                 }}
-                                className="max-w-40"
+                                className="max-w-full sm:max-w-40"
                             >
-                                <div className="size-12 mx-auto [&_svg]:h-full [&_svg]:w-full">
+                                <div className="size-10 lg:size-12 mx-auto [&_svg]:h-full [&_svg]:w-full">
                                     {index !== 1 ? (
                                         feature.image
                                     ) : (
@@ -597,7 +599,7 @@ export default function DashboardLogin() {
                     </div>
                 </div>
             </div>
-            <div className="w-[40%]">
+            <div className="w-full lg:w-[40%]">
                 <Login />
             </div>
         </div>

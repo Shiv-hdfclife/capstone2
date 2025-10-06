@@ -47,7 +47,7 @@ export const uploadFile = async (file: File, documentType: string) => {
         formData.append('documentType', documentType);
 
         // Always use partnerId 123 for upload URL
-        const res = await axios.post('http://192.168.254.74:8081/configs/api/partners/123/loader-transformation-configs/upload', formData, {
+        const res = await axios.post('http://192.168.254.58:8081/configs/api/partners/123/loader-transformation-configs/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -89,7 +89,7 @@ export const fetchLoaderConfigs = async (partnerId: string) => {
         console.log(`Fetching loader configs for partner ${partnerId}... (using hardcoded partnerId: 123)`);
 
         // Always use partnerId 123 for fetching configs
-        const res = await fetch(`http://192.168.254.74:8081/configs/api/partner/123/configs`, {
+        const res = await fetch(`http://192.168.254.58:8081/configs/api/partner/123/configs`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export const downloadFile = async (excelFileId: string) => {
         console.log(`Downloading file with ID: ${excelFileId}`);
 
         // Always use partnerId 123 for download URL
-        const downloadUrl = `http://192.168.254.74:8081/api/partners/123/files/${excelFileId}/download`;
+        const downloadUrl = `http://192.168.254.58:8081/api/partners/123/files/${excelFileId}/download`;
 
         const res = await fetch(downloadUrl, {
             method: 'GET',
